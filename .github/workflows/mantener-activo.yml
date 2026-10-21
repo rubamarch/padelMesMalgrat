@@ -1,0 +1,40 @@
+# Supabase pausa los proyectos gratuitos tras una semana sin uso.
+# Esta tarea consulta la base de datos cada 3 días para que eso no pase.
+name: Mantener Supabase activo
+
+on:
+  schedule:
+    - cron: "23 7 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Consultar la base de datos
+        run: |
+          URL=$(sed -n 's/.*supabaseUrl: *"\([^"]*\)".*/\1/p' config.js)
+          KEY=$(sed -n 's/.*supabaseAnonKey: *"\([^"]*\)".*/\1/p' config.js)
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "Supabase todavía no está configurado en config.js"
+            exit 0
+          fi
+          curl -fsS -X POST "$URL/rest/v1/rpc/get_torneos" \
+            -H "apikey: $KEY" -H "Content-Type: application/json" -d '{}' > /dev/null
+          echo "Supabase responde"
+
+      # GitHub desactiva las tareas programadas de repositorios sin cambios en 60 días.
+      - name: Mantener el repositorio activo
+        run: |
+          last=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - last )) -gt $(( 50 * 86400 )) ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "Mantener activa la tarea automática"
+            git push
+          fi
