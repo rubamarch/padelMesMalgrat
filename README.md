@@ -3,7 +3,7 @@
 Web de los torneos del club: portada con carteles, inscripción de parejas, horario de partidos, cuadros
 y un configurador para los organizadores.
 
-- **Web:** https://padelmesmalgrat.github.io (GitHub Pages, gratis)
+- **Web:** https://rubamarch.github.io/padelMesMalgrat/ (GitHub Pages, gratis)
 - **Datos:** Supabase (plan gratuito)
 - **Coste:** 0 €
 
@@ -60,9 +60,8 @@ contraseña de organizador `1234`). Sirve para verla antes de conectarla.
 
 ### 3. Web
 
-El repositorio se llama `padelmesmalgrat.github.io` dentro de la organización `padelmesmalgrat`,
-así que GitHub Pages lo publica solo en https://padelmesmalgrat.github.io.
-Si no aparece: **Settings → Pages → Source: Deploy from a branch → main / (root)**.
+En el repositorio: **Settings → Pages → Source: Deploy from a branch → main / (root) → Save**.
+En un par de minutos la web queda en https://rubamarch.github.io/padelMesMalgrat/
 
 ## Uso habitual
 

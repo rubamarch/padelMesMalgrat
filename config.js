@@ -6,6 +6,6 @@
  */
 window.APP_CONFIG = {
   club: "Padel Mes Malgrat",
-  supabaseUrl: "",      // Supabase → Project Settings → API → Project URL
-  supabaseAnonKey: "",  // Supabase → Project Settings → API → anon public
+  supabaseUrl: "https://wffvsnrghjefikgmxclc.supabase.co",      // Supabase → Project Settings → API → Project URL
+  supabaseAnonKey: "sb_publishable_hrPCzG9mI-3ecQvKEFc3OQ_yJ9Z06tU",  // Supabase → Project Settings → API → anon public
 };
