@@ -34,6 +34,8 @@ create table if not exists public.inscripciones (
   pagado     boolean not null default false
 );
 create index if not exists inscripciones_torneo on public.inscripciones (torneo_id);
+-- Tallas del welcome pack: {"Camiseta": {"jugador": "M", "companero": "L"}, ...}
+alter table public.inscripciones add column if not exists pack jsonb not null default '{}'::jsonb;
 
 -- El cuadrante de cada torneo (ajustes, parejas y horario) como un documento JSON.
 create table if not exists public.cuadrantes (
@@ -84,8 +86,8 @@ language sql stable security definer set search_path = public as $$
     select t.id, t.nombre, t.fechas, t.lugar, t.precio, t.plazas, t.estado, t.descripcion, t.cartel, t.orden, t.creado,
            (select count(*) from public.inscripciones i where i.torneo_id = t.id) as inscritas,
            coalesce(jsonb_array_length(c.datos -> 'pairs'), 0) as parejas,
-           coalesce(c.datos -> 'config' -> 'categories', '["Masculino","Femenino"]'::jsonb) as categorias,
-           coalesce(c.datos -> 'config' -> 'levels', '["A","B","C"]'::jsonb) as niveles
+           coalesce(c.datos -> 'config' -> 'categories', '["Masculino","Femenino","Mixto"]'::jsonb) as categorias,
+           coalesce(c.datos -> 'config' -> 'levels', '["A","B+","B","C+","C"]'::jsonb) as niveles
     from public.torneos t
     left join public.cuadrantes c on c.torneo_id = t.id
     where t.estado <> 'oculto' or public.is_admin()
@@ -115,6 +117,9 @@ end;
 $$;
 
 -- Inscripción de una pareja (la única forma de escribir para el público).
+-- p = {torneoId, jugador, companero, telefono, categoria, nivel, extras,
+--      disponibilidad: {<día>: {disponible, horas: ["18:00-19:00", ...]}},
+--      pack: {<artículo>: {jugador, companero}}}
 create or replace function public.inscribir(p jsonb) returns json
 language plpgsql volatile security definer set search_path = public as $$
 declare
@@ -123,8 +128,11 @@ declare
   n integer;
   dia text;
   x jsonb;
+  item text;
+  niveles jsonb;
   disp jsonb := '{}'::jsonb;
-  alguno boolean := false;
+  pack jsonb := '{}'::jsonb;
+  dias_validos text[];
 begin
   select * into t from public.torneos where id = p ->> 'torneoId' for update;
   if not found or t.estado <> 'abierta' then
@@ -139,30 +147,57 @@ begin
   end if;
 
   select datos -> 'config' into cfg from public.cuadrantes where torneo_id = t.id;
-  if not coalesce(cfg -> 'categories', '["Masculino","Femenino"]'::jsonb) ? (p ->> 'categoria') then
+  if not coalesce(cfg -> 'categories', '["Masculino","Femenino","Mixto"]'::jsonb) ? (p ->> 'categoria') then
     raise exception 'Elige una categoría.';
   end if;
-  if not coalesce(cfg -> 'levels', '["A","B","C"]'::jsonb) ? (p ->> 'nivel') then
-    raise exception 'Elige un nivel.';
+  niveles := coalesce(cfg -> 'catLevels' -> (p ->> 'categoria'), cfg -> 'levels', '["A","B+","B","C+","C"]'::jsonb);
+  if jsonb_typeof(niveles) <> 'array' or not niveles ? (p ->> 'nivel') then
+    raise exception 'Elige un nivel de los que se juegan en tu categoría.';
   end if;
 
-  foreach dia in array array['jue', 'vie', 'sab', 'dom'] loop
+  -- días que se juegan según el cuadrante (o jueves a domingo si aún no hay)
+  if cfg is not null and jsonb_typeof(cfg -> 'days') = 'array' then
+    select array_agg(d ->> 'id') into dias_validos from jsonb_array_elements(cfg -> 'days') d
+     where coalesce((d ->> 'on')::boolean, false) or coalesce((d ->> 'finals')::boolean, false);
+  else
+    dias_validos := array['jue', 'vie', 'sab', 'dom'];
+  end if;
+
+  for dia in select jsonb_object_keys(case when jsonb_typeof(p -> 'disponibilidad') = 'object' then p -> 'disponibilidad' else '{}'::jsonb end) loop
     x := p -> 'disponibilidad' -> dia;
-    if x is not null and (x ->> 'disponible')::boolean then
-      if (x ->> 'desde') !~ '^\d\d:\d\d$' or (x ->> 'hasta') !~ '^\d\d:\d\d$' or (x ->> 'desde') >= (x ->> 'hasta') then
-        raise exception 'Revisa los horarios: la hora de inicio debe ser anterior a la de fin.';
-      end if;
-      disp := disp || jsonb_build_object(dia, (x ->> 'desde') || '-' || (x ->> 'hasta'));
-      alguno := true;
+    continue when not coalesce((x ->> 'disponible')::boolean, false);
+    if not dia = any(coalesce(dias_validos, array[]::text[])) then
+      raise exception 'Uno de los días elegidos no es día de juego.';
     end if;
+    if jsonb_typeof(x -> 'horas') <> 'array' or jsonb_array_length(x -> 'horas') = 0 then
+      raise exception 'Marca las horas de cada día que actives.';
+    end if;
+    if jsonb_array_length(x -> 'horas') > 24 or exists (
+      select 1 from jsonb_array_elements_text(x -> 'horas') h
+       where h !~ '^\d\d:\d\d-\d\d:\d\d$' or split_part(h, '-', 1) >= split_part(h, '-', 2)) then
+      raise exception 'Revisa las horas: hay alguna franja mal escrita.';
+    end if;
+    disp := disp || jsonb_build_object(dia,
+      (select string_agg(h, ', ' order by h) from jsonb_array_elements_text(x -> 'horas') h));
   end loop;
-  if not alguno then
+  if disp = '{}'::jsonb then
     raise exception 'Marca al menos un día en el que podáis jugar.';
   end if;
 
-  insert into public.inscripciones (torneo_id, jugador, companero, telefono, categoria, nivel, disp, extras)
+  -- welcome pack: las dos tallas de cada artículo que haya configurado el organizador
+  if cfg is not null and jsonb_typeof(cfg -> 'pack') = 'array' then
+    for item in select jsonb_array_elements_text(cfg -> 'pack') loop
+      if coalesce(p -> 'pack' -> item ->> 'jugador', '') = '' or coalesce(p -> 'pack' -> item ->> 'companero', '') = '' then
+        raise exception 'Elige las tallas del welcome pack para los dos.';
+      end if;
+      pack := pack || jsonb_build_object(item, jsonb_build_object(
+        'jugador', left(p -> 'pack' -> item ->> 'jugador', 10), 'companero', left(p -> 'pack' -> item ->> 'companero', 10)));
+    end loop;
+  end if;
+
+  insert into public.inscripciones (torneo_id, jugador, companero, telefono, categoria, nivel, disp, pack, extras)
   values (t.id, left(btrim(p ->> 'jugador'), 120), left(btrim(p ->> 'companero'), 120),
-          left(coalesce(btrim(p ->> 'telefono'), ''), 40), p ->> 'categoria', p ->> 'nivel', disp,
+          left(coalesce(btrim(p ->> 'telefono'), ''), 40), p ->> 'categoria', p ->> 'nivel', disp, pack,
           left(coalesce(btrim(p ->> 'extras'), ''), 1000));
   return json_build_object('ok', true);
 end;
@@ -187,3 +222,17 @@ drop policy if exists carteles_admin_borrar on storage.objects;
 create policy carteles_admin_subir   on storage.objects for insert with check (bucket_id = 'carteles' and public.is_admin());
 create policy carteles_admin_cambiar on storage.objects for update using (bucket_id = 'carteles' and public.is_admin());
 create policy carteles_admin_borrar  on storage.objects for delete using (bucket_id = 'carteles' and public.is_admin());
+
+-- ---------- fotos de los torneos (privadas, solo organizadores) ----------
+insert into storage.buckets (id, name, public)
+values ('fotos', 'fotos', false)
+on conflict (id) do update set public = false;
+
+drop policy if exists fotos_admin_ver on storage.objects;
+drop policy if exists fotos_admin_subir on storage.objects;
+drop policy if exists fotos_admin_cambiar on storage.objects;
+drop policy if exists fotos_admin_borrar on storage.objects;
+create policy fotos_admin_ver     on storage.objects for select using (bucket_id = 'fotos' and public.is_admin());
+create policy fotos_admin_subir   on storage.objects for insert with check (bucket_id = 'fotos' and public.is_admin());
+create policy fotos_admin_cambiar on storage.objects for update using (bucket_id = 'fotos' and public.is_admin());
+create policy fotos_admin_borrar  on storage.objects for delete using (bucket_id = 'fotos' and public.is_admin());

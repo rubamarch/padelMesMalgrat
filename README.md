@@ -17,9 +17,17 @@ y un configurador para los organizadores.
 | Oculto | No aparece |
 
 Los **organizadores** entran con "Acceso organizador" (al pie de la página) y además pueden:
-crear y borrar torneos, editar sus datos y subir el cartel, cambiar el estado, ver las inscripciones con
-teléfono y extras, marcar quién ha pagado, pasar las inscripciones al cuadrante, editar parejas,
-generar y retocar el horario, y cambiar los ajustes (días, horas, pistas, categorías, niveles, finales).
+
+- En la portada: crear torneos, **ordenarlos arrastrando** las tarjetas y guardar las **fotos** de cada torneo
+  (pestaña *Fotos*, privada).
+- En cada torneo (*Configurador*): estado, datos y cartel, **welcome pack** (camiseta, pantalones, sudadera u otro;
+  el jugador elige talla), inscripciones con teléfono, extras, tallas y **pagado**, y pasar inscritos al cuadrante.
+- Ajustes: **fechas del torneo** (aparecen todos los días y se desactivan los que no se juegan), tipo de partido
+  (3 sets, 2 sets y tie break con punto de oro o ventaja, 9 juegos o por tiempo), **tiempo reservado por partido**,
+  pistas, **niveles por categoría** (A, B+, B, C+, C) y fases finales (cuartos, semis y final; semis y final; final).
+
+Los jugadores eligen su disponibilidad **hora a hora**, y el horario y los cuadros se filtran por categoría y
+se pueden **guardar en PDF** para compartir por WhatsApp.
 
 ## Archivos
 
@@ -71,6 +79,11 @@ En un par de minutos la web queda en https://rubamarch.github.io/padelMesMalgrat
 3. Cambia el estado a **Inscripción abierta** y comparte el enlace (botón *Copiar enlace del torneo*).
 4. Al cerrar inscripciones: **Pasar al cuadrante** → revisa **Parejas** → **Generar horario** en
    **Horario** → estado **En juego**. Desde ese momento los jugadores ven horarios y cuadros.
+
+## Actualizar la base de datos
+
+Cuando una versión nueva cambie `supabase/schema.sql`, vuelve a pegarlo entero en **SQL Editor → Run**.
+Es seguro: no borra torneos, inscripciones ni fotos.
 
 ## Seguridad y privacidad
 

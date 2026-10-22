@@ -470,11 +470,58 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   .mrow{border-radius:var(--r-md)}
   .mrow b{font-weight:800}
   label.f input,label.f select,.dayrow select,.dayrow input[type=time]{border-radius:10px}
+  /* filtros de categoría */
+  .gfil{gap:8px}
+  .gfil .chip{border:2px solid transparent;cursor:pointer;padding:6px 12px;font-size:.85rem;font-family:var(--font);opacity:.5;transition:all .3s ease}
+  .gfil:not(.some) .chip{opacity:1}
+  .gfil .chip.on{opacity:1;border-color:currentColor;box-shadow:var(--shadow-sm)}
+  .gfil .chip:hover{opacity:1}
+  .gfil .gall{background:var(--surface-2);color:var(--ink-strong)}
+  .pdf .scroll{overflow:visible!important}
+  .pdf table.grid,.pdf table.cross{min-width:0!important}
+  .pdf .cell.dim{visibility:hidden}
+  /* editor por horas */
+  .avail .c{width:34px}
+  /* días del torneo */
+  .dayrow{grid-template-columns:48px minmax(120px,1.2fr) 110px 1fr 1fr 1.4fr}
+  .dayrow.off b{opacity:.45;font-weight:600}
+  @media (max-width:560px){.dayrow{grid-template-columns:48px 1fr 1fr}.dayrow .cap{grid-column:1/-1}}
+  /* categorías y niveles */
+  .catlv{display:flex;flex-direction:column;gap:8px}
+  .catrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-md)}
+  .catrow b{min-width:110px}
+  .lvbtns{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+  .lvbtn{min-width:44px;padding:8px 10px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);color:var(--muted);font-weight:700;cursor:pointer;transition:all .3s ease}
+  .lvbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .lvbtn.on{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent;box-shadow:var(--glow)}
+  /* horas en la inscripción */
+  .hchips{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+  .hchip{border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-weight:600;font-size:13px;padding:7px 10px;border-radius:10px;cursor:pointer;transition:all .3s ease;font-variant-numeric:tabular-nums}
+  .hchip:hover{border-color:var(--accent)}
+  .hchip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .hchip.todo{background:var(--surface-2);border-color:transparent}
+  /* welcome pack */
+  .packs{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .pk{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid var(--line-strong);border-radius:12px;cursor:pointer;font-weight:600}
+  .pk:has(input:checked){border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .tallas{display:grid;gap:12px}
+  .talla-row{display:grid;grid-template-columns:minmax(110px,1fr) 1fr 1fr;gap:10px;align-items:end}
+  @media (max-width:560px){.talla-row{grid-template-columns:1fr 1fr}.talla-row b{grid-column:1/-1}}
+  .resumen-pack{display:flex;flex-wrap:wrap;gap:8px}
+  /* portada: orden y fotos */
+  .ordenable .tcard{cursor:grab}
+  .drag-ghost{opacity:.35}
+  .homeseg{display:inline-flex;margin-bottom:18px}
+  .fgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .foto{margin:0;display:grid;gap:6px;min-width:0}
+  .foto img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block;background:var(--surface-2)}
+  .foto figcaption{display:flex;justify-content:space-between;gap:8px}
 
 </style>
 
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 </head>
 <body>
 
@@ -509,10 +556,12 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
       <span aria-hidden="true">ℹ︎</span>
       <span>Vista de ejemplo con torneos y parejas inventados. Las inscripciones no se guardan. Para probar el modo organizador entra con cualquier correo y la contraseña <b>1234</b>.</span>
     </div>
+    <div class="tabs-in homeseg" id="homeseg" role="tablist" hidden><button type="button" class="tab" data-hv="torneos">Torneos</button><button type="button" class="tab admin-tab" data-hv="fotos">Fotos</button></div>
     <div class="filtros" id="filtros" role="group" aria-label="Filtrar torneos"></div>
     <div class="tgrid" id="tgrid" aria-live="polite">
       <div class="esq" style="height:400px"></div><div class="esq" style="height:400px"></div><div class="esq" style="height:400px"></div>
     </div>
+    <section class="sec" id="fotos" hidden></section>
   </section>
 
   <!-- Torneo -->
@@ -580,7 +629,9 @@ function parseT(s){
 function defaultConfig(){
   return {
     duration: 60, courts: ["Pista 1","Pista 2","Pista 3"], maxPerDay: 2, minRest: 0, subSize: 4,
-    categories: ["Masculino","Femenino"], levels: ["A","B","C"],
+    categories: ["Masculino","Femenino","Mixto"], levels: ["A","B+","B","C+","C"],
+    catLevels: {}, pack: [], packOtro: "", dateFrom: "", dateTo: "",
+    matchType: "2sets", tieMode: "oro", matchTime: 60,
     morning: [540, 840], afternoon: [900, 1350],
     days: [
       {id:"jue", name:"Jueves",  start:960, end:1350, on:true},
@@ -595,6 +646,42 @@ function fixConfig(c){
   for(const k in d) if(c[k] === undefined) c[k] = d[k];
   return c;
 }
+/* niveles que se juegan en cada categoría (en el orden general) */
+const levelsFor = (cat, c = state.config) => { const l = c.catLevels && c.catLevels[cat]; return Array.isArray(l) ? c.levels.filter(x => l.includes(x)) : c.levels.slice(); };
+const dshort = d => d.short || d.name.slice(0, 3);
+const MATCH_TYPES = [["3sets", "3 sets"], ["2sets", "2 sets y tie break"], ["9juegos", "9 juegos"], ["tiempo", "Por tiempo"]];
+function matchTxt(c){
+  const t = (MATCH_TYPES.find(x => x[0] === c.matchType) || MATCH_TYPES[1])[1];
+  if(c.matchType === "2sets") return t + " · " + (c.tieMode === "adv" ? "con ventaja (ADV)" : "punto de oro");
+  if(c.matchType === "tiempo") return (+c.matchTime || 60) + " minutos de juego";
+  return t;
+}
+function catShort(cat, cats){
+  if(/^mix/i.test(cat)) return "X";
+  const f = cat.charAt(0).toUpperCase(), i = cats.indexOf(cat);
+  return cats.slice(0, i).some(o => o.charAt(0).toUpperCase() === f) ? cat.slice(0, 2).toUpperCase() : f;
+}
+/* días del torneo a partir de las fechas */
+const WD = [["dom","Domingo"],["lun","Lunes"],["mar","Martes"],["mie","Miércoles"],["jue","Jueves"],["vie","Viernes"],["sab","Sábado"]];
+const MES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const MESL = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function genDays(c, from, to){
+  const prev = Object.fromEntries((c.days || []).map(d => [d.id, d])), out = [];
+  const b = new Date(to + "T12:00:00");
+  for(let x = new Date(from + "T12:00:00"); x <= b && out.length < 62; x.setDate(x.getDate() + 1)){
+    const id = x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0");
+    const [wd, wn] = WD[x.getDay()], finde = x.getDay() === 0 || x.getDay() === 6, o = prev[id] || {};
+    out.push({id, wd, name: wn + " " + x.getDate() + " " + MES[x.getMonth()], short: wn.slice(0, 3) + " " + x.getDate(),
+      start: o.start ?? (finde ? 540 : 960), end: o.end ?? 1350, on: o.on ?? true, finals: o.finals ?? false});
+  }
+  return out;
+}
+function fechasTxt(f, t){
+  const a = new Date(f + "T12:00:00"), b = new Date(t + "T12:00:00");
+  if(a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth())
+    return (a.getDate() === b.getDate() ? a.getDate() : a.getDate() + "–" + b.getDate()) + " " + MESL[a.getMonth()] + " " + a.getFullYear();
+  return a.getDate() + " " + MES[a.getMonth()] + " – " + b.getDate() + " " + MES[b.getMonth()] + " " + b.getFullYear();
+}
 
 /* ---------- free-text availability (catalán / castellano) ---------- */
 const DAY_ALIASES = {
@@ -606,7 +693,7 @@ const TT = "(\\d{1,2}(?:[:.h]\\d{2})?)";
 function dayIdsIn(seg){
   const words = seg.split(/[^a-z0-9]+/), out = [];
   state.config.days.forEach(d => {
-    const al = (DAY_ALIASES[d.id] || []).concat([norm(d.name)]);
+    const al = (DAY_ALIASES[d.wd || d.id] || []).concat([norm(d.name)]);
     if(words.some(w => al.includes(w))) out.push(d.id);
   });
   if(/cap de setmana|fin de semana|finde/.test(seg)) ["sab","dom"].forEach(id => { if(dayById(id) && !out.includes(id)) out.push(id); });
@@ -723,15 +810,16 @@ function rowsToPairs(rows){
   return {items, warn};
 }
 
-let cuadroFilter = "";
+let cuadroFilter = "", gsel = new Set();
 let state, tab = "horario", selected = null, filter = "", editing = null, focusPair = "", importPreview = null;
 let db = null, downloads = null, saveTimer = null, writing = false, pendingWrite = false, touched = false;
 /* ---------- groups, pairs, slots ---------- */
 function groups(){
   const c = state.config, out = [];
   c.categories.forEach((cat,ci) => c.levels.forEach((lv,li) => {
+    if(!levelsFor(cat, c).includes(lv)) return;
     const idx = ci*c.levels.length + li;
-    out.push({key: cat+"|"+lv, cat, level: lv, idx, cls: "g"+(idx%6), short: cat.charAt(0).toUpperCase()+"-"+lv, label: cat+" "+lv});
+    out.push({key: cat+"|"+lv, cat, level: lv, idx, cls: "g"+(idx%6), short: catShort(cat, c.categories)+"-"+lv, label: cat+" "+lv});
   }));
   return out;
 }
@@ -917,13 +1005,26 @@ function solve(itersOverride){
 }
 
 /* ---------- fases finales: semis + final, or a direct final, on the finals day ---------- */
-const finalsFmt = lv => (state.config.finalsFmt || {})[lv] === "final" ? "final" : "semis";
+const finalsFmt = lv => { const v = (state.config.finalsFmt || {})[lv]; return v === "final" || v === "cuartos" ? v : "semis"; };
+const FINALS_OPTS = [["cuartos", "Cuartos, semis y final"], ["semis", "Semis y final"], ["final", "Final"]];
 function seeds(k, f){
+  if(f === "cuartos"){
+    if(k === 1) return [["1º", "8º"], ["4º", "5º"], ["2º", "7º"], ["3º", "6º"]];
+    if(k === 2) return [["1º Grupo 1", "4º Grupo 2"], ["2º Grupo 2", "3º Grupo 1"], ["1º Grupo 2", "4º Grupo 1"], ["2º Grupo 1", "3º Grupo 2"]];
+    if(k === 4) return [["1º Grupo 1", "2º Grupo 2"], ["1º Grupo 3", "2º Grupo 4"], ["1º Grupo 2", "2º Grupo 1"], ["1º Grupo 4", "2º Grupo 3"]];
+    return [["1º clasificado", "8º clasificado"], ["4º clasificado", "5º clasificado"], ["2º clasificado", "7º clasificado"], ["3º clasificado", "6º clasificado"]];
+  }
   if(k >= 3) return f === "semis" ? [["Mejor 1º", k >= 4 ? "4º mejor 1º" : "Mejor 2º"], ["2º mejor 1º", "3er mejor 1º"]] : [["Mejor 1º", "2º mejor 1º"]];
   if(k === 2) return f === "semis" ? [["1º Grupo 1", "2º Grupo 2"], ["1º Grupo 2", "2º Grupo 1"]] : [["1º Grupo 1", "1º Grupo 2"]];
   return f === "semis" ? [["1º", "4º"], ["2º", "3º"]] : [["1º", "2º"]];
 }
 function qualifyText(k, f){
+  if(f === "cuartos"){
+    if(k === 1) return "Pasan a cuartos los 8 primeros.";
+    if(k === 2) return "Pasan a cuartos los 4 primeros de cada grupo, cruzados.";
+    if(k === 4) return "Pasan a cuartos los 2 primeros de cada grupo, cruzados.";
+    return "Pasan a cuartos los 8 mejores: primero los primeros de grupo y después los mejores segundos.";
+  }
   if(k >= 3) return f === "semis" ? (k >= 4 ? "Pasan a semifinales los primeros de cada grupo." : "Pasan a semifinales los 3 primeros de grupo y el mejor segundo.") : "Pasan a la final los 2 mejores primeros de grupo.";
   if(k === 2) return f === "semis" ? "Pasan a semifinales los 2 primeros de cada grupo, cruzados." : "La final la juegan los primeros de cada grupo.";
   return f === "semis" ? "Pasan a semifinales los 4 primeros." : "La final la juegan los 2 primeros.";
@@ -934,7 +1035,12 @@ function finalsMatches(){
   groups().forEach(g => {
     if(state.pairs.filter(p => gkey(p) === g.key).length < 2) return;
     const k = state.config.subSize ? subCount(g.key) : 1, f = finalsFmt(g.level), sd = seeds(k, f);
-    if(f === "semis"){
+    if(f === "cuartos"){
+      sd.forEach(([a, b], i) => out.push({id: g.key + "#qf" + (i+1), g: g.key, kind: "qf", name: "Cuarto " + (i+1), a, b}));
+      out.push({id: g.key + "#sf1", g: g.key, kind: "sf", name: "Semifinal 1", a: "Ganador cuarto 1", b: "Ganador cuarto 2", after: [g.key + "#qf1", g.key + "#qf2"]});
+      out.push({id: g.key + "#sf2", g: g.key, kind: "sf", name: "Semifinal 2", a: "Ganador cuarto 3", b: "Ganador cuarto 4", after: [g.key + "#qf3", g.key + "#qf4"]});
+      out.push({id: g.key + "#f", g: g.key, kind: "f", name: "Final", a: "Ganador semi 1", b: "Ganador semi 2", after: [g.key + "#sf1", g.key + "#sf2"]});
+    } else if(f === "semis"){
       sd.forEach(([a, b], i) => out.push({id: g.key + "#sf" + (i+1), g: g.key, kind: "sf", name: "Semifinal " + (i+1), a, b}));
       out.push({id: g.key + "#f", g: g.key, kind: "f", name: "Final", a: "Ganador semi 1", b: "Ganador semi 2", after: [g.key + "#sf1", g.key + "#sf2"]});
     } else out.push({id: g.key + "#f", g: g.key, kind: "f", name: "Final", a: sd[0][0], b: sd[0][1]});
@@ -951,10 +1057,15 @@ function finalsPlan(){
   const gOrd = m => { const g = groupOf(m.g); return lvl[g.level] * 10 + cfg.categories.indexOf(g.cat); };
   const take = (m, cell) => { used.add(cell.ti + ":" + cell.c); pos[m.id] = cell; };
   const free = cell => !used.has(cell.ti + ":" + cell.c);
+  ms.filter(m => m.kind === "qf").sort((x,y) => gOrd(x) - gOrd(y)).forEach(m => { const cell = cells.find(free); if(cell) take(m, cell); });
   const semis = ms.filter(m => m.kind === "sf").sort((x,y) => gOrd(x) - gOrd(y));
-  semis.forEach(m => { const cell = cells.find(free); if(cell) take(m, cell); });
+  semis.forEach(m => {
+    const minTi = m.after ? Math.max(...m.after.map(id => pos[id] ? pos[id].ti : -1)) : -1;
+    const cell = cells.find(c => free(c) && c.ti > minTi) || cells.find(free);
+    if(cell) take(m, cell);
+  });
   const endOf = m => Math.max(...m.after.map(id => pos[id] ? pos[id].ti : 99));
-  ms.filter(m => m.after).sort((x,y) => endOf(y) - endOf(x) || gOrd(y) - gOrd(x)).forEach(m => {
+  ms.filter(m => m.kind === "f" && m.after).sort((x,y) => endOf(y) - endOf(x) || gOrd(y) - gOrd(x)).forEach(m => {
     const cell = cells.slice().reverse().filter(free).sort((x,y) => y.ti - x.ti || x.c - y.c)[0];
     if(cell) take(m, cell);
   });
@@ -1094,11 +1205,11 @@ function scheduleOutdated(){
   for(const id of ids) if(!have.has(id)) return true;
   return false;
 }
-function matchVisible(m){
-  if(!filter) return true;
-  if(filter.startsWith("g:")) return m.g === filter.slice(2);
-  if(filter.startsWith("p:")) return m.a === filter.slice(2) || m.b === filter.slice(2);
-  return true;
+function matchVisible(m){ return !gsel.size || gsel.has(m.g); }
+function gchips(gs){
+  const used = gs.filter(g => state.pairs.some(p => gkey(p) === g.key));
+  if(!used.length) return "";
+  return `<div class="legend gfil${gsel.size ? " some" : ""}" role="group" aria-label="Filtrar por categoría"><button type="button" class="chip gall${gsel.size ? "" : " on"}" data-act="gsel" data-g="">Todas</button>${used.map(g => `<button type="button" class="chip ${g.cls}${gsel.has(g.key) ? " on" : ""}" data-act="gsel" data-g="${esc(g.key)}" aria-pressed="${gsel.has(g.key)}">${esc(g.label)}</button>`).join("")}</div>`;
 }
 function renderHorario(){
   const el = $("#v-horario"), sch = state.schedule, cfg = state.config;
@@ -1120,16 +1231,10 @@ function renderHorario(){
     ${ADMIN ? `<button class="btn primary" data-act="generate">Volver a generar</button>` : ""}
     ${ADMIN && pinnedN ? `<button class="btn" data-act="unpin-all">Soltar ${pinnedN} fijado${pinnedN>1?"s":""}</button>` : ""}
     <span class="spacer"></span>
-    <label class="f" style="flex-direction:row;align-items:center;gap:8px">Ver
-      <select id="filter">
-        <option value="">Todos los partidos</option>
-        <optgroup label="Grupo">${gs.map(g => `<option value="g:${esc(g.key)}" ${filter==="g:"+g.key?"selected":""}>${esc(g.label)}</option>`).join("")}</optgroup>
-        <optgroup label="Pareja">${state.pairs.slice().sort((a,b)=>pname(a).localeCompare(pname(b))).map(p => `<option value="p:${p.id}" ${filter==="p:"+p.id?"selected":""}>${esc(pname(p))}</option>`).join("")}</optgroup>
-      </select></label>
-    <button class="btn" data-act="export-csv">Descargar CSV</button>
-    <button class="btn" data-act="copy-sheet">Copiar para Excel</button>
+    ${ADMIN ? `<button class="btn" data-act="export-csv">Descargar CSV</button><button class="btn" data-act="copy-sheet">Copiar para Excel</button>` : ""}
+    <button class="btn" data-act="pdf" data-what="horario">Guardar en PDF</button>
   </div>
-  <div class="legend">${gs.map(g => `<span class="chip ${g.cls}">${esc(g.short)} · ${esc(g.label)}</span>`).join("")}</div>`;
+  ${gchips(gs)}`;
 
   if(ADMIN && scheduleOutdated()) h += `<div class="notice warn"><span>Has cambiado parejas desde la última generación. Vuelve a generar para incluir los cambios (los partidos fijados se respetan).</span></div>`;
   if(ADMIN && nIss) h += `<div class="notice warn"><span><b>${nIss} partido${nIss>1?"s":""} con avisos</b> (marcados con !). Pasa el ratón o toca el partido para ver el motivo.</span></div>`;
@@ -1155,7 +1260,7 @@ function renderHorario(){
         const m = fc[t + "#" + ci];
         if(!m) return `<td><div class="cell final">Libre</div></td>`;
         const g = groupOf(m.g);
-        return `<td><div class="cell ${g.cls}${filter.startsWith("g:") && filter.slice(2) !== m.g ? " dim" : ""}" style="cursor:default" title="${m.early ? "Se juega antes de que acaben sus semifinales" : ""}"><span class="tag">${esc(g.short)} · ${esc(m.name.toUpperCase())}${m.early ? `<span class="iss">!</span>` : ""}</span><span class="vs">${esc(m.a)}<br><i>vs</i> ${esc(m.b)}</span></div></td>`;
+        return `<td><div class="cell ${g.cls}${!matchVisible(m) ? " dim" : ""}" style="cursor:default" title="${m.early ? "Se juega antes de que acaben sus semifinales" : ""}"><span class="tag">${esc(g.short)} · ${esc(m.name.toUpperCase())}${m.early ? `<span class="iss">!</span>` : ""}</span><span class="vs">${esc(m.a)}<br><i>vs</i> ${esc(m.b)}</span></div></td>`;
       }).join("")}</tr>`; });
       h += `</tbody></table></div></section>`;
       return;
@@ -1231,25 +1336,23 @@ function availStrip(p){
     const set = new Set((p.avail || {})[d.id] || []);
     let cells = "";
     for(let t = d.start; t + 30 <= d.end; t += 30) cells += `<i class="${set.has(t) ? "on" : ""}"></i>`;
-    return `<span class="strip" title="${esc(d.name)} ${set.size ? esc(rangesOf([...set])) : "no puede"}"><span class="sd">${esc(d.name.slice(0,3))}</span><span class="bar">${cells}</span></span>`;
+    return `<span class="strip" title="${esc(d.name)} ${set.size ? esc(rangesOf([...set])) : "no puede"}"><span class="sd">${esc(dshort(d))}</span><span class="bar">${cells}</span></span>`;
   }).join("")}</span>`;
 }
 function commonText(a, b){
   const days = state.config.days.filter(d => d.on), parts = [];
   days.forEach(d => {
     const sa = new Set((a.avail || {})[d.id] || []), both = ((b.avail || {})[d.id] || []).filter(t => sa.has(t));
-    if(both.length) parts.push(d.name.slice(0,3) + " " + rangesOf(both));
+    if(both.length) parts.push(dshort(d) + " " + rangesOf(both));
   });
   return parts.join(" · ");
 }
 function renderCuadros(){
   const el = $("#v-cuadros"), cfg = state.config, sch = state.schedule, gs = groups();
   const issues = validateAll(), fplan = finalsPlan();
-  let h = `<div class="row"><label class="f" style="flex-direction:row;align-items:center;gap:8px">Ver
-    <select id="cuadro-filter"><option value="">Todos los grupos</option>${gs.map(g => `<option value="${esc(g.key)}" ${cuadroFilter===g.key?"selected":""}>${esc(g.label)}</option>`).join("")}</select></label>
-    <span class="spacer"></span><span class="small muted">La barra junto a cada pareja es cuándo puede jugar (azul) de jueves a sábado. Pasa el ratón por encima para ver las horas.</span></div>`;
+  let h = `<div class="row"><span class="small muted">La barra junto a cada pareja es cuándo puede jugar (azul) cada día de grupos. Pasa el ratón por encima para ver las horas.</span><span class="spacer"></span><button class="btn" data-act="pdf" data-what="cuadros">Guardar en PDF</button></div>${gchips(gs)}`;
   if(!sch) h += `<div class="notice"><span>Genera el horario para ver las horas en los cuadros.</span></div>`;
-  gs.filter(g => !cuadroFilter || g.key === cuadroFilter).forEach(g => {
+  gs.filter(g => !gsel.size || gsel.has(g.key)).forEach(g => {
     const ps = state.pairs.filter(p => gkey(p) === g.key); if(!ps.length) return;
     const k = cfg.subSize ? subCount(g.key) : 1;
     h += `<section class="cuadro"><h2 class="ctitle ${g.cls}">${esc(g.label.toUpperCase())}</h2>`;
@@ -1279,8 +1382,9 @@ function renderCuadros(){
     const fm = fplan.placed.filter(m => m.g === g.key);
     if(fm.length){
       const when = m => `${fmt(m.start)} (${cfg.courts[m.court] || ""})`;
-      const sf = fm.filter(m => m.kind === "sf"), fi = fm.find(m => m.kind === "f");
+      const qf = fm.filter(m => m.kind === "qf"), sf = fm.filter(m => m.kind === "sf"), fi = fm.find(m => m.kind === "f");
       let t = qualifyText(k, finalsFmt(g.level)) + " ";
+      if(qf.length) t += qf.map(m => `${m.name}: ${m.a} vs ${m.b}, ${when(m)}`).join(". ") + ". ";
       if(sf.length) t += sf.map(m => `${m.name}: ${m.a} vs ${m.b}, ${when(m)}`).join(". ") + ". ";
       if(fi) t += `Final: ${fi.a} vs ${fi.b}, ${fplan.day.name.toLowerCase()} a las ${when(fi)}.`;
       h += `<div class="cnote">${esc(t)}</div>`;
@@ -1297,7 +1401,7 @@ function rangesOf(cells){
   return out.map(([a,b]) => fmt(a) + "–" + fmt(b)).join(", ");
 }
 function availSummary(p){
-  return state.config.days.filter(d => p.avail && p.avail[d.id] && p.avail[d.id].length).map(d => d.name.slice(0,3) + " " + rangesOf(p.avail[d.id])).join(" · ") || "Sin disponibilidad";
+  return state.config.days.filter(d => p.avail && p.avail[d.id] && p.avail[d.id].length).map(d => dshort(d) + " " + rangesOf(p.avail[d.id])).join(" · ") || "Sin disponibilidad";
 }
 function renderParejas(){
   if(!ADMIN) return renderParejasPublic();
@@ -1413,15 +1517,17 @@ function applyImport(replace){
 function renderEditor(){
   const cfg = state.config, e = editing, days = cfg.days;
   const minT = Math.min(...days.map(d => d.start)), maxT = Math.max(...days.map(d => d.end));
+  const h0 = Math.floor(minT / 60) * 60;
   let grid = `<table><thead><tr><th></th>`;
-  for(let t = minT; t < maxT; t += 30) grid += `<th>${t % 60 === 0 ? fmt(t).replace(":00","h") : ""}</th>`;
+  for(let t = h0; t < maxT; t += 60) grid += `<th>${Math.floor(t / 60)}h</th>`;
   grid += `<th></th></tr></thead><tbody>`;
   days.forEach(d => {
     const set = new Set(e.avail[d.id] || []);
-    grid += `<tr><td class="d">${esc(d.name.slice(0,3))}</td>`;
-    for(let t = minT; t < maxT; t += 30){
-      const na = t < d.start || t + 30 > d.end;
-      grid += `<td><i class="c ${na ? "na" : set.has(t) ? "on" : ""}" data-d="${d.id}" data-t="${t}" title="${esc(d.name)} ${fmt(t)}–${fmt(t+30)}"></i></td>`;
+    grid += `<tr><td class="d">${esc(dshort(d))}</td>`;
+    for(let t = h0; t < maxT; t += 60){
+      const halves = [t, t + 30].filter(x => x >= d.start && x + 30 <= d.end);
+      const on = halves.length && halves.every(x => set.has(x));
+      grid += `<td><i class="c ${!halves.length ? "na" : on ? "on" : ""}" data-d="${d.id}" data-t="${halves.join(",")}" title="${esc(d.name)} ${fmt(t)}–${fmt(t + 60)}"></i></td>`;
     }
     grid += `<td class="q"><button class="btn sm" data-act="day-all" data-d="${d.id}">Todo</button> <button class="btn sm" data-act="day-none" data-d="${d.id}">Nada</button></td></tr>`;
   });
@@ -1432,11 +1538,11 @@ function renderEditor(){
       <label class="f">Jugador/a 1<input id="ed-p1" value="${esc(e.p1)}" autocomplete="off"></label>
       <label class="f">Jugador/a 2<input id="ed-p2" value="${esc(e.p2)}" autocomplete="off"></label>
       <label class="f">Categoría<select id="ed-cat">${cfg.categories.map(c => `<option ${c===e.cat?"selected":""}>${esc(c)}</option>`).join("")}</select></label>
-      <label class="f">Nivel<select id="ed-level">${cfg.levels.map(l => `<option ${l===e.level?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
+      <label class="f">Nivel<select id="ed-level">${levelsFor(e.cat).concat(levelsFor(e.cat).includes(e.level) ? [] : [e.level]).map(l => `<option ${l===e.level?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
       ${cfg.subSize ? subSelect(e) : ""}
     </div>
     ${e.note ? `<p class="small" style="margin:0"><span class="muted">Nota de la inscripción:</span> «${esc(e.note)}»</p>` : ""}
-    <div><div class="eyebrow">Cuándo puede jugar</div><p class="small muted" style="margin:2px 0 8px">Pinta las medias horas arrastrando. Azul = disponible. Un partido solo se pone si la pareja está libre durante todo el partido.</p>
+    <div><div class="eyebrow">Cuándo puede jugar</div><p class="small muted" style="margin:2px 0 8px">Pinta las horas arrastrando. Azul = disponible. Un partido solo se pone si la pareja está libre durante todo el partido.</p>
       <div class="avail" id="availgrid">${grid}</div></div>
     <div class="row">
       <button class="btn primary" data-act="save-pair">Guardar</button>
@@ -1454,8 +1560,8 @@ function readEditorFields(){
 
 let paint = null;
 function paintCell(c){
-  const d = c.dataset.d, t = +c.dataset.t, set = new Set(editing.avail[d] || []);
-  if(paint.val) set.add(t); else set.delete(t);
+  const d = c.dataset.d, ts = c.dataset.t.split(",").map(Number), set = new Set(editing.avail[d] || []);
+  ts.forEach(t => { if(paint.val) set.add(t); else set.delete(t); });
   editing.avail[d] = [...set].sort((a,b) => a-b);
   c.classList.toggle("on", paint.val);
 }
@@ -1549,7 +1655,22 @@ function renderPareja(){
 function renderAjustes(){
   const el = $("#v-ajustes"), c = state.config, ms = allMatches().length, cap = capacity();
   const pct = cap ? Math.min(100, Math.round(ms / cap * 100)) : 100;
-  let h = `<div class="panel" style="display:flex;flex-direction:column;gap:10px">
+  let h = `<div class="panel" style="display:flex;flex-direction:column;gap:12px">
+    <h2 style="font-size:1.3rem;text-transform:uppercase">Fechas y días del torneo</h2>
+    <div class="fields">
+      <label class="f">Primer día<input type="date" id="cfg-date-from" value="${esc(c.dateFrom || "")}"></label>
+      <label class="f">Último día<input type="date" id="cfg-date-to" value="${esc(c.dateTo || "")}"></label>
+    </div>
+    <p class="small muted" style="margin:0">${c.dateFrom && c.dateTo ? "Desactiva los días en que no se juega y elige si cada día es de grupos o de finales." : "Elige el primer y el último día: aparecerán todos los días del torneo para que actives los que se juegan."}</p>
+    <div class="days">${c.days.map((d,i) => { const juega = d.on || d.finals, n = d.on ? Math.max(0, Math.floor((d.end - d.start) / c.duration)) : 0;
+      return `<div class="dayrow${juega ? "" : " off"}"><label class="sw" for="day-on-${i}" title="Se juega / no se juega"><input type="checkbox" id="day-on-${i}" class="day-on" data-i="${i}" ${juega ? "checked" : ""}><span class="t"></span></label><b>${esc(d.name)}</b>
+        ${juega ? `<select id="day-mode-${i}" data-i="${i}" class="day-mode" aria-label="Uso del ${esc(d.name)}"><option value="on" ${d.on?"selected":""}>Grupos</option><option value="finals" ${!d.on&&d.finals?"selected":""}>Finales</option></select>
+        <input type="time" id="day-start-${i}" class="day-start" data-i="${i}" value="${fmt(d.start)}" step="1800" aria-label="Apertura ${esc(d.name)}">
+        <input type="time" id="day-end-${i}" class="day-end" data-i="${i}" value="${fmt(d.end)}" step="1800" aria-label="Cierre ${esc(d.name)}">
+        <span class="cap">${d.on ? `${n} franjas × ${c.courts.length} pistas = ${n*c.courts.length} partidos` : "Reservado para fases finales"}</span>` : `<span class="cap" style="grid-column:3/-1">No se juega</span>`}</div>`; }).join("")}</div>
+    <p class="small muted" style="margin:0">Las franjas empiezan a la hora de apertura y van seguidas cada ${c.duration} min. Un partido solo entra si termina antes del cierre.</p>
+  </div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:10px">
     <div class="row"><div class="eyebrow">Capacidad</div><span class="spacer"></span><span class="small">${ms} partidos para ${cap} huecos de pista (${cap ? Math.round(ms/cap*100) : "–"}%)</span></div>
     <div class="capbar ${ms > cap ? "over" : ""}"><i style="width:${pct}%"></i></div>
     ${ms > cap ? `<p class="small" style="color:var(--bad);margin:0">No caben todos los partidos. Acorta la duración, amplía horarios o divide los grupos grandes.</p>` : `<p class="small muted" style="margin:0">Que quepan en total no garantiza que cuadren: depende de cuándo puede cada pareja.</p>`}
@@ -1557,11 +1678,15 @@ function renderAjustes(){
   <div class="panel" style="display:flex;flex-direction:column;gap:14px">
     <h2 style="font-size:1.3rem;text-transform:uppercase">Partidos</h2>
     <div class="fields">
-      <label class="f">Duración de cada partido<select id="cfg-duration">${[45,60,75,90,105,120].map(v => `<option value="${v}" ${v===c.duration?"selected":""}>${v} min</option>`).join("")}</select></label>
+      <label class="f">Tipo de partido<select id="cfg-matchtype">${MATCH_TYPES.map(([v, txt]) => `<option value="${v}" ${v === c.matchType ? "selected" : ""}>${txt}</option>`).join("")}</select></label>
+      ${c.matchType === "2sets" ? `<label class="f">Puntuación<select id="cfg-tiemode"><option value="oro" ${c.tieMode !== "adv" ? "selected" : ""}>Punto de oro</option><option value="adv" ${c.tieMode === "adv" ? "selected" : ""}>Ventaja (ADV)</option></select></label>` : ""}
+      ${c.matchType === "tiempo" ? `<label class="f">Tiempo de juego (minutos)<input id="cfg-matchtime" type="number" min="10" max="240" step="5" value="${+c.matchTime || 60}"></label>` : ""}
+      <label class="f">Tiempo reservado por partido<select id="cfg-duration">${[45,60,75,90,105,120].map(v => `<option value="${v}" ${v===c.duration?"selected":""}>${v} min</option>`).join("")}</select></label>
       <label class="f">Número de pistas<input id="cfg-courts" type="number" min="1" max="12" value="${c.courts.length}"></label>
       <label class="f">Máx. partidos por pareja y día<select id="cfg-maxday">${[[1,"1"],[2,"2"],[3,"3"],[0,"Sin límite"]].map(([v,t]) => `<option value="${v}" ${v===c.maxPerDay?"selected":""}>${t}</option>`).join("")}</select></label>
       <label class="f">Descanso mínimo entre partidos<select id="cfg-rest">${[[0,"Pueden ir seguidos"],[30,"30 min"],[60,"1 h"],[90,"1 h 30"],[120,"2 h"],[180,"3 h"]].map(([v,t]) => `<option value="${v}" ${v===c.minRest?"selected":""}>${t}</option>`).join("")}</select></label>
     </div>
+    <p class="small muted" style="margin:0">El tiempo reservado es lo que se reserva la pista para cada partido: el horario se monta con esas franjas.</p>
     <label class="f">Nombres de las pistas (separados por comas)<input id="cfg-courtnames" value="${esc(c.courts.join(", "))}"></label>
   </div>
   <div class="panel" style="display:flex;flex-direction:column;gap:14px">
@@ -1575,27 +1700,19 @@ function renderAjustes(){
     </div>
     <p class="small muted" style="margin:0">En subgrupos, dentro de cada subgrupo juegan todos contra todos. Mañana y tarde se usan al leer la disponibilidad escrita del Excel; si las cambias, vuelve a importarlo.</p>
   </div>
-  <div class="panel" style="display:flex;flex-direction:column;gap:10px">
-    <h2 style="font-size:1.3rem;text-transform:uppercase">Días y horas del club</h2>
-    <div class="days">${c.days.map((d,i) => { const n = d.on ? Math.max(0, Math.floor((d.end - d.start) / c.duration)) : 0;
-      return `<div class="dayrow"><select id="day-mode-${i}" data-i="${i}" class="day-mode" aria-label="Uso del ${esc(d.name)}" style="grid-column:span 1"><option value="on" ${d.on?"selected":""}>Grupos</option><option value="finals" ${!d.on&&d.finals?"selected":""}>Finales</option><option value="off" ${!d.on&&!d.finals?"selected":""}>Cerrado</option></select><b>${esc(d.name)}</b>
-        <input type="time" id="day-start-${i}" class="day-start" data-i="${i}" value="${fmt(d.start)}" step="1800" aria-label="Apertura ${esc(d.name)}">
-        <input type="time" id="day-end-${i}" class="day-end" data-i="${i}" value="${fmt(d.end)}" step="1800" aria-label="Cierre ${esc(d.name)}">
-        <span class="cap">${d.on ? `${n} franjas × ${c.courts.length} pistas = ${n*c.courts.length} partidos` : (d.finals ? "Reservado para fases finales" : "No se juega")}</span></div>`; }).join("")}</div>
-    <p class="small muted" style="margin:0">Las franjas empiezan a la hora de apertura y van seguidas cada ${c.duration} min. Un partido solo entra si termina antes del cierre.</p>
-  </div>
   <div class="panel" style="display:flex;flex-direction:column;gap:14px">
     <h2 style="font-size:1.3rem;text-transform:uppercase">Categorías y niveles</h2>
-    <div class="fields">
-      <label class="f">Categorías (separadas por comas)<input id="cfg-cats" value="${esc(c.categories.join(", "))}"></label>
-      <label class="f">Niveles (separados por comas)<input id="cfg-levels" value="${esc(c.levels.join(", "))}"></label>
-    </div>
-    <p class="small muted" style="margin:0">Cada categoría × nivel es un grupo donde todas las parejas juegan contra todas (liguilla).</p>
+    <p class="small muted" style="margin:0">Pulsa los niveles que se juegan en cada categoría. Cada categoría con su nivel es un grupo. La inscripción solo ofrece los niveles activos.</p>
+    <div class="catlv">${c.categories.map(cat => { const on = levelsFor(cat); return `<div class="catrow"><b>${esc(cat)}</b>
+      <div class="lvbtns">${c.levels.map(l => `<button type="button" class="lvbtn${on.includes(l) ? " on" : ""}" data-act="cat-lvl" data-cat="${esc(cat)}" data-lv="${esc(l)}" aria-pressed="${on.includes(l)}">${esc(l)}</button>`).join("")}</div>
+      <button type="button" class="btn sm danger" data-act="cat-del" data-cat="${esc(cat)}">Quitar</button></div>`; }).join("")}</div>
+    <div class="row"><label class="f" style="flex:1;min-width:200px">Nueva categoría<input id="cat-new" placeholder="Veteranos, Infantil…"></label><button class="btn" data-act="cat-add" style="align-self:flex-end">Añadir categoría</button></div>
+    <label class="f">Niveles posibles, de mayor a menor (separados por comas)<input id="cfg-levels" value="${esc(c.levels.join(", "))}"></label>
   </div>
   <div class="panel" style="display:flex;flex-direction:column;gap:14px">
     <h2 style="font-size:1.3rem;text-transform:uppercase">Fases finales</h2>
-    <div class="fields">${c.levels.map(l => `<label class="f">Nivel ${esc(l)}<select class="ff-level" data-lv="${esc(l)}"><option value="semis" ${finalsFmt(l)==="semis"?"selected":""}>Semifinales y final</option><option value="final" ${finalsFmt(l)==="final"?"selected":""}>Solo final</option></select></label>`).join("")}</div>
-    <p class="small muted" style="margin:0">Se juegan el día marcado como «Finales» en Días y horas del club. Primero las semis, y las finales lo más tarde posible para que haya descanso. Lo que pasa a cada fase sale escrito bajo los cuadros.</p>
+    <div class="fields">${c.levels.map(l => `<label class="f">Nivel ${esc(l)}<select class="ff-level" data-lv="${esc(l)}">${FINALS_OPTS.map(([v, txt]) => `<option value="${v}" ${finalsFmt(l) === v ? "selected" : ""}>${txt}</option>`).join("")}</select></label>`).join("")}</div>
+    <p class="small muted" style="margin:0">Se juegan los días marcados como «Finales» en Fechas y días del torneo. Primero los cuartos, después las semis y las finales lo más tarde posible para que haya descanso. Lo que pasa a cada fase sale escrito bajo los cuadros.</p>
     <label class="f">Nota extra bajo cada cuadro (por ejemplo, cómo se desempata entre grupos)<textarea id="cfg-note" style="min-height:70px;font-family:var(--body)">${esc(c.note || "")}</textarea></label>
   </div>
   <div class="panel row"><span class="small muted">Empezar de cero borra parejas y horario de este torneo.</span><span class="spacer"></span><button class="btn danger" data-act="reset" id="reset-btn">Empezar de cero</button></div>`;
@@ -1604,6 +1721,9 @@ function renderAjustes(){
 function applyConfigChange(e){
   const c = state.config, t = e.target, id = t.id;
   if(id === "cfg-duration") c.duration = +t.value;
+  else if(id === "cfg-matchtype") c.matchType = t.value;
+  else if(id === "cfg-tiemode") c.tieMode = t.value;
+  else if(id === "cfg-matchtime"){ const v = Math.round(+t.value); if(!(v >= 10 && v <= 240)){ toast("Pon un tiempo entre 10 y 240 minutos"); return; } c.matchTime = v; }
   else if(id === "cfg-maxday") c.maxPerDay = +t.value;
   else if(id === "cfg-rest") c.minRest = +t.value;
   else if(id === "cfg-courts"){
@@ -1620,6 +1740,17 @@ function applyConfigChange(e){
   else if(id === "cfg-levels"){ const v = t.value.split(",").map(s => s.trim()).filter(Boolean); if(v.length) c.levels = v; }
   else if(t.classList.contains("ff-level")) (c.finalsFmt ||= {})[t.dataset.lv] = t.value;
   else if(t.classList.contains("day-mode")){ const d = c.days[+t.dataset.i]; d.on = t.value === "on"; d.finals = t.value === "finals"; }
+  else if(t.classList.contains("day-on")){ const d = c.days[+t.dataset.i]; d.on = t.checked; d.finals = false; }
+  else if(id === "cfg-date-from" || id === "cfg-date-to"){
+    c[id === "cfg-date-from" ? "dateFrom" : "dateTo"] = t.value;
+    if(c.dateFrom && !c.dateTo) c.dateTo = c.dateFrom;
+    if(c.dateFrom && c.dateTo){
+      if(c.dateTo < c.dateFrom){ toast("El último día tiene que ser después del primero"); renderAll(); return; }
+      if((new Date(c.dateTo) - new Date(c.dateFrom)) / 864e5 > 61){ toast("Como máximo 62 días"); renderAll(); return; }
+      c.days = genDays(c, c.dateFrom, c.dateTo);
+      if(typeof onDatesChanged === "function") onDatesChanged();
+    }
+  }
   else if(id === "cfg-subsize"){ c.subSize = +t.value; state.pairs.forEach(p => delete p.sub); if(c.subSize){ ensureSubs(); smartSubgroups(); } }
   else if(/^cfg-(morning|afternoon)-(a|b)$/.test(id)){
     const v = parseT(t.value); if(v == null) return;
@@ -1760,7 +1891,7 @@ const LIVE = !!SB;
 
 const ESTADOS = [["abierta", "Inscripción abierta"], ["cerrada", "Inscripción cerrada"], ["juego", "En juego"], ["finalizado", "Finalizado"], ["oculto", "Oculto"]];
 const ESTADO_TXT = Object.fromEntries(ESTADOS);
-const TAB_TXT = {info: "Información", inscripcion: "Inscripción", horario: "Horario", cuadros: "Cuadros", parejas: "Parejas", pareja: "Mi pareja", config: "Configurador"};
+const TAB_TXT = {info: "Información", inscripcion: "Inscripción", horario: "Horario", cuadros: "Cuadros", parejas: "Parejas", pareja: "Tu pareja", config: "Configurador"};
 const ICON = {
   cal: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>',
   pin: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
@@ -1769,6 +1900,8 @@ const ICON = {
 };
 
 let torneos = [], homeFiltro = "todos", T = null, inscripciones = [], ADMIN = false, PIN = "", insEnviada = null, torneoForm = null;
+let homeVista = "torneos", fotosAlbum = "", fotos = [], sortable = null, finDrag = 0;
+const PACK_BASE = ["Camiseta", "Pantalones", "Sudadera"], TALLAS = ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
 
 /* ---------- servidor: Google Apps Script o servidor de ejemplo ---------- */
 function llamar(fn, arg){
@@ -1777,7 +1910,7 @@ function llamar(fn, arg){
 }
 const ok = r => { if(r.error) throw new Error(r.error.message || "Error de conexión"); return r.data; };
 const insRow = r => ({clave: r.id, id: r.id, fecha: Date.parse(r.creado), jugador: r.jugador, telefono: r.telefono, companero: r.companero,
-  categoria: r.categoria, nivel: r.nivel, disp: r.disp || {}, extras: r.extras, pagado: r.pagado});
+  categoria: r.categoria, nivel: r.nivel, disp: r.disp || {}, extras: r.extras, pagado: r.pagado, pack: r.pack || {}});
 const API = {
   getTorneos: async () => ok(await SB.rpc("get_torneos")),
   getTorneo: async id => ok(await SB.rpc("get_torneo", {p_id: id})),
@@ -1807,9 +1940,20 @@ const API = {
     ok(await SB.storage.from("carteles").upload(path, file, {contentType: file.type, upsert: false}));
     return SB.storage.from("carteles").getPublicUrl(path).data.publicUrl;
   },
+  adminOrden: async list => { await Promise.all(list.map(x => SB.from("torneos").update({orden: x.orden}).eq("id", x.id).then(ok))); return {ok: true}; },
+  fotosListar: async album => {
+    const files = ok(await SB.storage.from("fotos").list(album, {limit: 1000, sortBy: {column: "created_at", order: "desc"}})).filter(f => f.id);
+    if(!files.length) return [];
+    const paths = files.map(f => album + "/" + f.name);
+    const [ver, bajar] = [ok(await SB.storage.from("fotos").createSignedUrls(paths, 3600)), ok(await SB.storage.from("fotos").createSignedUrls(paths, 3600, {download: true}))];
+    return files.map((f, i) => ({path: paths[i], url: ver[i].signedUrl, down: bajar[i].signedUrl, size: (f.metadata && f.metadata.size) || 0}));
+  },
+  fotosSubir: async a => { ok(await SB.storage.from("fotos").upload(a.path, a.blob, {contentType: "image/jpeg", upsert: false})); return true; },
+  fotosBorrar: async path => { ok(await SB.storage.from("fotos").remove([path])); return true; },
 };
 const msgErr = e => (e && e.message ? String(e.message).replace(/^Error:\s*/, "").replace(/^Exception:\s*/, "") : "Algo ha fallado. Inténtalo de nuevo.");
 
+const fotosDemo = {};
 const DEMO = (() => {
   const ts = [
     {id: "open-octubre", nombre: "Open de Octubre", fechas: "22–25 octubre 2026", lugar: "Pistas 1–3", precio: "18 € / jugador", plazas: 32, estado: "juego", descripcion: "Liguilla por grupos de jueves a sábado y fases finales el domingo por la mañana.", cartel: ""},
@@ -1818,6 +1962,7 @@ const DEMO = (() => {
     {id: "verano-2026", nombre: "Torneo de Verano", fechas: "9–12 julio 2026", lugar: "Pistas 1–3", precio: "18 € / jugador", plazas: 32, estado: "finalizado", descripcion: "Edición de verano con noche de finales.", cartel: ""},
   ];
   const cuad = {}, ins = {"otono-2026": [], "navidad-2026": []};
+  const tallaDe = i => TALLAS[1 + (i % 4)];
   const ejemplo = [
     ["Laura Vidal", "Anna Roca", "Femenino", "B", {vie: "18:00-22:30", sab: "09:00-14:00", dom: "09:00-14:00"}],
     ["Jordi Puig", "Marc Soler", "Masculino", "A", {jue: "18:00-22:30", vie: "17:00-22:30", sab: "09:00-22:30"}],
@@ -1830,7 +1975,7 @@ const DEMO = (() => {
     ["Marta Riera", "Paula Gil", "Femenino", "B", {vie: "17:00-22:30", sab: "09:00-20:00"}],
     ["Júlia Casas", "Elena Martí", "Femenino", "B", {jue: "18:00-22:30", sab: "09:00-14:00", dom: "09:00-14:00"}],
   ];
-  ejemplo.forEach(([a, b, c, n, d], i) => ins["otono-2026"].push({clave: "demo" + i, pagado: i % 3 === 0, fecha: Date.now() - (i + 1) * 86400000, jugador: a, telefono: "600 000 00" + i, companero: b, categoria: c, nivel: n, disp: {jue: d.jue || "No", vie: d.vie || "No", sab: d.sab || "No", dom: d.dom || "No"}, extras: i === 1 ? "Preferimos no jugar antes de las 18:00 el viernes" : ""}));
+  ejemplo.forEach(([a, b, c, n, d], i) => ins["otono-2026"].push({clave: "demo" + i, pagado: i % 3 === 0, fecha: Date.now() - (i + 1) * 86400000, jugador: a, telefono: "600 000 00" + i, companero: b, categoria: c, nivel: n, disp: {jue: d.jue || "No", vie: d.vie || "No", sab: d.sab || "No", dom: d.dom || "No"}, extras: i === 1 ? "Preferimos no jugar antes de las 18:00 el viernes" : "", pack: {Camiseta: {jugador: tallaDe(i), companero: tallaDe(i + 1)}}}));
   function cuadranteDe(id){
     if(cuad[id] === undefined){
       if(id === "open-octubre" || id === "verano-2026"){
@@ -1861,6 +2006,9 @@ const DEMO = (() => {
     adminTorneo: a => { pin(a.pin); return {cuadrante: cuadranteDe(a.id), inscripciones: ins[a.id] || []}; },
     adminGuardar: a => { pin(a.pin); cuad[a.id] = JSON.parse(a.json); return {ok: true}; },
     adminEstado: a => { pin(a.pin); const t = ts.find(x => x.id === a.id); t.estado = a.estado; return {ok: true, estado: t.estado}; },
+    adminOrden: list => { list.forEach(x => { const t = ts.find(y => y.id === x.id); if(t) t.orden = x.orden; }); ts.sort((a, b) => (a.orden || 0) - (b.orden || 0)); return {ok: true}; },
+    fotosListar: album => fotosDemo[album] || [],
+    fotosBorrar: path => { for(const k in fotosDemo) fotosDemo[k] = fotosDemo[k].filter(f => f.path !== path); return true; },
   };
 })();
 
@@ -1873,6 +2021,7 @@ function save(){
   saveTimer = setTimeout(flush, 800);
 }
 async function flush(){
+  saveTimer = null;
   if(writing){ pendingWrite = true; return; }
   writing = true;
   try{ await llamar("adminGuardar", {pin: PIN, id: T.id, json: JSON.stringify(state)}); setSync(LIVE ? "Guardado" : "Guardado (ejemplo)"); }
@@ -1905,13 +2054,19 @@ function copiarEnlace(id){
 
 /* ---------- portada ---------- */
 function renderHome(){
+  $("#homeseg").hidden = !ADMIN; if(!ADMIN) homeVista = "torneos";
+  document.querySelectorAll("#homeseg .tab").forEach(b => b.setAttribute("aria-selected", b.dataset.hv === homeVista));
+  const vf = homeVista === "fotos";
+  $("#filtros").hidden = vf; $("#tgrid").hidden = vf; $("#fotos").hidden = !vf;
+  if(sortable){ sortable.destroy(); sortable = null; }
+  $("#tgrid").classList.remove("ordenable");
+  if(vf){ renderFotos(); return; }
   const cuenta = k => k === "todos" ? torneos.length : torneos.filter(t => k === "abierta" ? t.estado === "abierta" : t.estado === k).length;
   const fs = [["todos", "Todos"], ["abierta", "Inscripción abierta"], ["juego", "En juego"], ["finalizado", "Finalizados"]].concat(ADMIN ? [["cerrada", "Inscripción cerrada"], ["oculto", "Ocultos"]] : []).filter(([k]) => k === "todos" || cuenta(k));
   if(!fs.some(f => f[0] === homeFiltro)) homeFiltro = "todos";
   $("#filtros").innerHTML = (torneos.length ? fs.map(([k, l]) => `<button type="button" class="filtro" data-filtro="${k}" aria-pressed="${homeFiltro === k}">${l}<i>${cuenta(k)}</i></button>`).join("") : "")
-    + (ADMIN ? `<span style="flex:1"></span><button type="button" class="b b-primary" data-act="nuevo-torneo">+ Nuevo torneo</button>` : "");
-  const orden = {juego: 0, abierta: 1, cerrada: 2, finalizado: 3, oculto: 4};
-  const lista = torneos.filter(t => homeFiltro === "todos" || t.estado === homeFiltro).sort((a, b) => orden[a.estado] - orden[b.estado]);
+    + (ADMIN ? `<span style="flex:1"></span>${homeFiltro === "todos" && torneos.length > 1 ? `<span class="lead small">Arrastra las tarjetas para ordenarlas</span>` : ""}<button type="button" class="b b-primary" data-act="nuevo-torneo">+ Nuevo torneo</button>` : "");
+  const lista = torneos.filter(t => homeFiltro === "todos" || t.estado === homeFiltro).sort((a, b) => (a.orden || 0) - (b.orden || 0));
   const g = $("#tgrid");
   if(!lista.length){
     g.innerHTML = `<div class="card vacio" style="grid-column:1/-1"><h2>No hay torneos publicados</h2><p class="lead">${ADMIN ? "Crea el primero con «+ Nuevo torneo»." : "Aquí aparecerán los próximos torneos del club."}</p></div>`;
@@ -1931,6 +2086,112 @@ function renderHome(){
           <span class="cta">${ctaTxt(t)} <span class="flecha">→</span></span></div>
       </div></button>`;
   }).join("");
+  if(ADMIN && homeFiltro === "todos" && window.Sortable && lista.length > 1){
+    g.classList.add("ordenable");
+    sortable = Sortable.create(g, {animation: 180, delay: 160, delayOnTouchOnly: true, ghostClass: "drag-ghost", onEnd: () => { finDrag = Date.now(); guardarOrden(); }});
+  }
+}
+async function guardarOrden(){
+  const ids = [...$("#tgrid").querySelectorAll("[data-open]")].map(x => x.dataset.open), cambios = [];
+  ids.forEach((id, i) => { const t = torneos.find(x => x.id === id); if(t && t.orden !== i * 10){ t.orden = i * 10; cambios.push({id, orden: t.orden}); } });
+  if(!cambios.length) return;
+  try{ await llamar("adminOrden", cambios); toast("Orden guardado"); }catch(e){ toast("No se ha guardado el orden: " + msgErr(e)); }
+}
+
+/* ---------- fotos (organizador) ---------- */
+function renderFotos(){
+  const opts = torneos.map(t => [t.id, t.nombre]).concat([["general", "General (sin torneo)"]]);
+  if(!opts.some(o => o[0] === fotosAlbum)) fotosAlbum = opts[0][0];
+  $("#fotos").innerHTML = `<div class="card"><div class="card-h"><div><h2>Fotos de los torneos</h2><p class="lead">Solo las ven los organizadores. Se guardan reducidas para no gastar espacio (el plan gratuito tiene 1 GB).</p></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <select class="in" id="foto-album" style="width:auto;min-width:240px" aria-label="Torneo">${opts.map(([v, l]) => `<option value="${esc(v)}" ${v === fotosAlbum ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>
+      <label class="b b-primary" for="foto-file" style="cursor:pointer">Subir fotos</label><input type="file" id="foto-file" accept="image/*" multiple hidden>
+      <span class="lead small" id="foto-info"></span></div>
+    <div class="fgrid" id="fgrid"><div class="esq" style="height:150px"></div><div class="esq" style="height:150px"></div></div></div>`;
+  cargarFotos();
+}
+async function cargarFotos(){
+  try{ fotos = await llamar("fotosListar", fotosAlbum) || []; pintarFotos(); }
+  catch(e){ const g = $("#fgrid"); if(g) g.innerHTML = `<p class="lead">${esc(msgErr(e))}</p>`; }
+}
+function pintarFotos(){
+  const g = $("#fgrid"); if(!g) return;
+  const mb = fotos.reduce((a, f) => a + (f.size || 0), 0) / 1048576;
+  $("#foto-info").textContent = fotos.length ? `${fotos.length} foto${fotos.length > 1 ? "s" : ""}${mb ? ` · ${mb.toFixed(1)} MB` : ""}` : "";
+  g.innerHTML = fotos.length ? fotos.map(f => `<figure class="foto"><a href="${esc(f.url)}" target="_blank" rel="noopener"><img src="${esc(f.url)}" alt="Foto del torneo" loading="lazy"></a>
+    <figcaption><a class="link" href="${esc(f.down || f.url)}" target="_blank" rel="noopener" download>Descargar</a><button type="button" class="link" style="color:var(--bad)" data-act="foto-del" data-path="${esc(f.path)}">Borrar</button></figcaption></figure>`).join("")
+    : `<p class="lead">Todavía no hay fotos de este torneo. Pulsa «Subir fotos» para añadirlas.</p>`;
+}
+async function comprimir(file){
+  try{
+    const img = await createImageBitmap(file), k = Math.min(1, 2400 / Math.max(img.width, img.height));
+    const cv = document.createElement("canvas"); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+    cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+    return await new Promise(r => cv.toBlob(r, "image/jpeg", .85)) || file;
+  }catch(e){ return file; }
+}
+async function subirFotos(files){
+  const info = $("#foto-info"); let n = 0, fallos = 0;
+  for(const f of files){
+    info.textContent = `Subiendo ${n + 1} de ${files.length}…`;
+    try{
+      const blob = await comprimir(f), path = fotosAlbum + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 6) + ".jpg";
+      if(LIVE) await API.fotosSubir({path, blob});
+      else { const u = URL.createObjectURL(blob); (fotosDemo[fotosAlbum] ||= []).unshift({path, url: u, down: u, size: blob.size}); }
+    }catch(e){ fallos++; }
+    n++;
+  }
+  toast(fallos ? `${n - fallos} subidas, ${fallos} con error` : `${n} foto${n > 1 ? "s" : ""} subida${n > 1 ? "s" : ""}`);
+  cargarFotos();
+}
+
+/* ---------- PDF para compartir (horario y cuadros) ---------- */
+let pdfLibs = null;
+function cargarScript(src){ return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("No se ha podido cargar el generador de PDF. Revisa la conexión.")); document.head.appendChild(s); }); }
+function libsPDF(){
+  return pdfLibs ||= Promise.all([
+    window.html2canvas ? 0 : cargarScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
+    window.jspdf ? 0 : cargarScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"),
+  ]).catch(e => { pdfLibs = null; throw e; });
+}
+function descargar(blob, name){
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast("PDF descargado");
+}
+async function guardarPDF(what, btn){
+  const txt = btn.textContent; btn.disabled = true; btn.textContent = "Preparando PDF…";
+  try{
+    await libsPDF();
+    const pdf = new window.jspdf.jsPDF({orientation: "landscape", unit: "mm", format: "a4"});
+    const W = 297, H = 210, M = 10, top = 18, alto = H - top - M;
+    const filtro = gsel.size ? [...gsel].map(k => (groupOf(k) || {label: k}).label).join(", ") : "Todas las categorías";
+    const blocks = [...document.querySelectorAll(what === "horario" ? "#v-horario .day" : "#v-cuadros .cuadro")]
+      .filter(el => what !== "horario" || !gsel.size || el.querySelector(".cell[data-mid]:not(.dim), .cell.final:not(.dim)[title]") || el.querySelector(".cell:not(.dim):not(.empty):not(.final)"));
+    if(!blocks.length) throw new Error(what === "horario" ? "No hay partidos que guardar todavía." : "No hay cuadros que guardar todavía.");
+    let primera = true;
+    for(const el of blocks){
+      const canvas = await html2canvas(el, {scale: 2, backgroundColor: "#ffffff", windowWidth: 1280, logging: false,
+        onclone: doc => { doc.documentElement.setAttribute("data-theme", "light"); doc.body.classList.add("pdf"); }});
+      const iw = W - 2 * M, ih = canvas.height * iw / canvas.width;
+      for(let y = 0; y < ih - 0.5; y += alto){
+        if(!primera) pdf.addPage(); primera = false;
+        pdf.setFontSize(12); pdf.setTextColor(15, 23, 42);
+        pdf.text(`${T.nombre} · ${what === "horario" ? "Horario" : "Cuadros"} · ${filtro}`, M, M + 3);
+        const h = Math.min(alto, ih - y), sy = y * canvas.width / iw, sh = h * canvas.width / iw;
+        const c2 = document.createElement("canvas"); c2.width = canvas.width; c2.height = Math.max(1, Math.round(sh));
+        c2.getContext("2d").drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+        pdf.addImage(c2.toDataURL("image/jpeg", .92), "JPEG", M, top, iw, h);
+      }
+    }
+    const blob = pdf.output("blob"), name = slug(T.nombre) + "-" + what + ".pdf";
+    const file = new File([blob], name, {type: "application/pdf"});
+    if(navigator.canShare && navigator.canShare({files: [file]})){
+      try{ await navigator.share({files: [file], title: T.nombre + " · " + (what === "horario" ? "Horario" : "Cuadros")}); }
+      catch(e){ if(!e || e.name !== "AbortError") descargar(blob, name); }
+    } else descargar(blob, name);
+  }catch(e){ toast(msgErr(e)); }
+  btn.disabled = false; btn.textContent = txt;
 }
 async function subirCartel(file){
   if(!LIVE) return URL.createObjectURL(file);
@@ -2030,15 +2291,26 @@ function renderInfo(){
       ${t.lugar ? `<div><dt>Lugar</dt><dd>${esc(t.lugar)}</dd></div>` : ""}
       ${t.precio ? `<div><dt>Precio</dt><dd>${esc(t.precio)}</dd></div>` : ""}
       <div><dt>${t.estado === "juego" || t.estado === "finalizado" ? "Parejas" : "Inscritas"}</dt><dd>${p.txt.replace(/<\/?b>/g, "")}</dd></div>
-      <div><dt>Categorías</dt><dd>${esc(c.categories.join(", "))}</dd></div>
-      <div><dt>Niveles</dt><dd>${esc(c.levels.join(", "))}</dd></div>
-      <div><dt>Partidos</dt><dd>${c.duration} min · ${c.courts.length} pistas</dd></div></dl>
+      ${c.categories.map(cat => `<div><dt>${esc(cat)}</dt><dd>Niveles ${esc(levelsFor(cat, c).join(" · "))}</dd></div>`).join("")}
+      ${(c.pack || []).length ? `<div><dt>Welcome pack</dt><dd>${esc(c.pack.join(", "))}</dd></div>` : ""}
+      <div><dt>Partidos</dt><dd>${esc(matchTxt(c))}</dd></div>
+      <div><dt>Pistas</dt><dd>${c.courts.length} · ${c.duration} min por partido</dd></div></dl>
       <div class="horas-club"><span class="etq">Horario de juego</span>${dias.map(d => `<div><span>${esc(d.name)}${d.finals && !d.on ? " · finales" : ""}</span><b>${fmt(d.start)}–${fmt(d.end)}</b></div>`).join("")}</div>
     </div></div>`;
 }
 
 /* ---------- Inscripción ---------- */
-function horasDe(d){ const out = []; for(let t = d.start; t <= d.end; t += 30) out.push(t); return out; }
+function franjas(d){ const out = []; for(let t = d.start; t < d.end; t += 60) out.push([t, Math.min(t + 60, d.end)]); return out; }
+const hlbl = (a, b) => (a % 60 ? fmt(a) : Math.floor(a / 60)) + "–" + (b % 60 ? fmt(b) : Math.floor(b / 60) + "h");
+function unirFranjas(fr){
+  const out = [];
+  fr.sort((x, y) => x[0] - y[0]).forEach(([a, b]) => { const l = out[out.length - 1]; if(l && l[1] === a) l[1] = b; else out.push([a, b]); });
+  return out.map(([a, b]) => fmt(a) + "-" + fmt(b));
+}
+function nivelesHTML(cat){
+  if(!cat) return `<p class="lead small" style="margin:0">Elige primero la categoría.</p>`;
+  return `<div class="seg" role="radiogroup">${levelsFor(cat).map((v, i) => `<input type="radio" name="i-niv" id="i-niv-${i}" value="${esc(v)}"><label for="i-niv-${i}">${esc(v)}</label>`).join("")}</div>`;
+}
 function renderInscripcion(){
   const el = $("#v-inscripcion"), t = T, c = state.config;
   if(insEnviada){ renderInsOk(); return; }
@@ -2056,16 +2328,18 @@ function renderInscripcion(){
     </div>
     <div class="card"><h2>Categoría y nivel</h2>
       <div class="campo"><span class="etq">Categoría</span>${seg("i-cat", c.categories)}</div>
-      <div class="campo"><span class="etq">Nivel</span>${seg("i-niv", c.levels)}</div>
+      <div class="campo"><span class="etq">Nivel</span><div id="niv-box">${nivelesHTML("")}</div></div>
     </div>
-    <div class="card"><div><h2>Disponibilidad</h2><p class="lead">Activa los días en los que podéis jugar y vuestra franja horaria. Cuanta más disponibilidad, más fácil es cuadrar los partidos.</p></div>
-      <div class="dias">${dias.map(d => { const hs = horasDe(d); const ini = Math.max(d.start, Math.min(1080, d.end - 120)), fin = d.end;
-        const opts = (sel, last) => hs.filter((h, i) => last ? i > 0 : i < hs.length - 1).map(h => `<option value="${fmt(h)}" ${h === sel ? "selected" : ""}>${fmt(h)}</option>`).join("");
-        return `<div class="dia" data-dia="${d.id}"><label class="sw" for="i-d-${d.id}"><input type="checkbox" id="i-d-${d.id}"><span class="t"></span><span>${esc(d.name)} ${d.finals && !d.on ? "<small>· finales</small>" : ""}</span></label>
-          <div class="horas" hidden><span>de</span><select id="i-d-${d.id}-desde" aria-label="${esc(d.name)} desde">${opts(ini, false)}</select><span>a</span><select id="i-d-${d.id}-hasta" aria-label="${esc(d.name)} hasta">${opts(fin, true)}</select></div>
-          <span class="nodisp">No disponible</span></div>`; }).join("")}</div>
+    <div class="card"><div><h2>Disponibilidad</h2><p class="lead">Activa los días en los que podéis jugar y marca las horas que os van bien. Cuanta más disponibilidad, más fácil es cuadrar los partidos.</p></div>
+      <div class="dias">${dias.map(d => `<div class="dia" data-dia="${d.id}"><label class="sw" for="i-d-${d.id}"><input type="checkbox" id="i-d-${d.id}"><span class="t"></span><span>${esc(d.name)} ${d.finals && !d.on ? "<small>· finales</small>" : ""}</span></label>
+          <span class="nodisp">No disponible</span>
+          <div class="horas hchips" hidden>${franjas(d).map(([a, b]) => `<button type="button" class="hchip" data-a="${a}" data-b="${b}" aria-pressed="false">${hlbl(a, b)}</button>`).join("")}<button type="button" class="hchip todo" data-todo>Todo el día</button></div></div>`).join("")}</div>
     </div>
-    <div class="card"><div class="campo"><label for="i-extras">Extras <span class="opc">(opcional)</span></label><textarea class="in" id="i-extras" placeholder="Talla de camiseta, alergias, si buscáis pareja, preferencias de horario…"></textarea></div></div>
+    ${(c.pack || []).length ? `<div class="card"><div><h2>Welcome pack</h2><p class="lead">Elige la talla de cada uno.</p></div>
+      <div class="tallas">${c.pack.map((n, i) => `<div class="talla-row"><b>${esc(n)}</b>
+        <div class="campo"><label for="pk-j-${i}">Tu talla</label><select class="in" id="pk-j-${i}"><option value="">Elige</option>${TALLAS.map(t => `<option>${t}</option>`).join("")}</select></div>
+        <div class="campo"><label for="pk-c-${i}">Tu compañero/a</label><select class="in" id="pk-c-${i}"><option value="">Elige</option>${TALLAS.map(t => `<option>${t}</option>`).join("")}</select></div></div>`).join("")}</div></div>` : ""}
+    <div class="card"><div class="campo"><label for="i-extras">Extras <span class="opc">(opcional)</span></label><textarea class="in" id="i-extras" placeholder="Alergias, si buscáis pareja, preferencias de horario…"></textarea></div></div>
     <div class="err" id="i-err" role="alert" hidden></div>
     <button type="submit" class="b b-primary b-lg b-full" id="i-enviar">Enviar inscripción <span class="flecha">→</span></button>
   </form>`;
@@ -2074,10 +2348,13 @@ function leerIns(){
   const radio = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
   const disponibilidad = {};
   state.config.days.filter(d => d.on || d.finals).forEach(d => {
-    disponibilidad[d.id] = {disponible: $("#i-d-" + d.id).checked, desde: $("#i-d-" + d.id + "-desde").value, hasta: $("#i-d-" + d.id + "-hasta").value};
+    const fr = [...document.querySelectorAll(`.dia[data-dia="${d.id}"] .hchip[aria-pressed="true"]:not([data-todo])`)].map(x => [+x.dataset.a, +x.dataset.b]);
+    disponibilidad[d.id] = {disponible: $("#i-d-" + d.id).checked, horas: unirFranjas(fr)};
   });
+  const pack = {};
+  (state.config.pack || []).forEach((n, i) => { pack[n] = {jugador: $("#pk-j-" + i).value, companero: $("#pk-c-" + i).value}; });
   return {torneoId: T.id, jugador: $("#i-jugador").value.trim(), companero: $("#i-companero").value.trim(), telefono: $("#i-telefono").value.trim(),
-    categoria: radio("i-cat"), nivel: radio("i-niv"), disponibilidad, extras: $("#i-extras").value.trim()};
+    categoria: radio("i-cat"), nivel: radio("i-niv"), disponibilidad, pack, extras: $("#i-extras").value.trim()};
 }
 function validarIns(d){
   if(!d.jugador || !d.companero) return "Escribe tu nombre y el de tu compañero/a.";
@@ -2085,8 +2362,10 @@ function validarIns(d){
   if(!d.nivel) return "Elige vuestro nivel.";
   const on = Object.entries(d.disponibilidad).filter(([, x]) => x.disponible);
   if(!on.length) return "Activa al menos un día en el que podáis jugar.";
-  const mal = on.find(([, x]) => x.desde >= x.hasta);
-  if(mal) return "El " + dayById(mal[0]).name.toLowerCase() + ", la hora de inicio tiene que ser anterior a la de fin.";
+  const sinHoras = on.find(([, x]) => !x.horas.length);
+  if(sinHoras) return "Marca las horas que podéis jugar el " + dayById(sinHoras[0]).name.toLowerCase() + ".";
+  const sinTalla = Object.entries(d.pack || {}).find(([, x]) => !x.jugador || !x.companero);
+  if(sinTalla) return "Elige las tallas de " + sinTalla[0].toLowerCase() + " para los dos.";
   return "";
 }
 async function enviarIns(){
@@ -2103,7 +2382,8 @@ async function enviarIns(){
 function renderInsOk(){
   const d = insEnviada;
   const filas = [["Torneo", T.nombre], ["Pareja", d.jugador + " / " + d.companero], ["Categoría", d.categoria], ["Nivel", d.nivel]]
-    .concat(Object.entries(d.disponibilidad).map(([k, x]) => [dayById(k).name, x.disponible ? x.desde + " – " + x.hasta : "No disponible"]));
+    .concat(Object.entries(d.disponibilidad).filter(([, x]) => x.disponible).map(([k, x]) => [dayById(k).name, x.horas.join(", ").replace(/-/g, "–")]))
+    .concat(Object.entries(d.pack || {}).map(([n, x]) => [n, x.jugador + " / " + x.companero]));
   if(d.extras) filas.push(["Extras", d.extras]);
   $("#v-inscripcion").innerHTML = `<div class="card entra"><div class="ok-box">
     <div class="ok-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
@@ -2133,11 +2413,13 @@ function renderParejasPublic(){
 function insToPair(r){
   const cfg = state.config, avail = {};
   cfg.days.forEach(d => {
-    const m = String((r.disp || {})[d.id] || "").match(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/);
-    if(!m) return;
-    const a = parseT(m[1]), b = parseT(m[2]), out = [];
-    for(let t = Math.ceil(Math.max(a, d.start) / 30) * 30; t + 30 <= Math.min(b, d.end); t += 30) out.push(t);
-    if(out.length) avail[d.id] = out;
+    const re = /(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/g, out = new Set();
+    let m;
+    while((m = re.exec(String((r.disp || {})[d.id] || "")))){
+      const a = parseT(m[1]), b = parseT(m[2]);
+      for(let t = Math.ceil(Math.max(a, d.start) / 30) * 30; t + 30 <= Math.min(b, d.end); t += 30) out.add(t);
+    }
+    if(out.size) avail[d.id] = [...out].sort((x, y) => x - y);
   });
   const cat = cfg.categories.find(c => norm(c) === norm(r.categoria)) || catOf(r.categoria) || r.categoria;
   const level = cfg.levels.find(l => norm(l) === norm(r.nivel)) || r.nivel;
@@ -2146,7 +2428,11 @@ function insToPair(r){
 function renderConfig(){
   const enCuadrante = new Set(state.pairs.map(p => p.src).filter(Boolean));
   const nuevas = inscripciones.filter(r => !enCuadrante.has(r.clave));
-  const dispTxt = r => state.config.days.map(d => { const v = (r.disp || {})[d.id]; return v && v !== "No" ? d.name.slice(0, 3) + " " + v : ""; }).filter(Boolean).join(" · ") || "Sin disponibilidad";
+  const dispTxt = r => state.config.days.map(d => { const v = (r.disp || {})[d.id]; return v && v !== "No" ? dshort(d) + " " + v : ""; }).filter(Boolean).join(" · ") || "Sin disponibilidad";
+  const packTxt = r => Object.entries(r.pack || {}).map(([n, x]) => `${n}: ${x.jugador || "?"} / ${x.companero || "?"}`).join(" · ");
+  const totales = {};
+  inscripciones.forEach(r => Object.entries(r.pack || {}).forEach(([n, x]) => [x.jugador, x.companero].forEach(t => { if(t){ (totales[n] ||= {})[t] = (totales[n][t] || 0) + 1; } })));
+  const c = state.config, otro = c.packOtro || "";
   const fecha = ms => ms ? new Date(ms).toLocaleDateString("es-ES", {day: "numeric", month: "short"}) : "";
   const pagadas = inscripciones.filter(r => r.pagado).length;
   const tf = torneoForm || T;
@@ -2160,11 +2446,10 @@ function renderConfig(){
     <div class="card"><div class="card-h"><div><h2>Datos del torneo</h2><p class="lead">Lo que se ve en la portada y en la pestaña Información.</p></div></div>
       <div class="grid-2">
         <div class="campo"><label for="tf-nombre">Nombre</label><input class="in tf" id="tf-nombre" data-k="nombre" value="${esc(tf.nombre)}"></div>
-        <div class="campo"><label for="tf-fechas">Fechas</label><input class="in tf" id="tf-fechas" data-k="fechas" value="${esc(tf.fechas)}" placeholder="5–8 noviembre 2026"></div>
+        <div class="campo"><label for="tf-fechas">Fechas <span class="opc">(se rellenan solas al elegir los días abajo)</span></label><input class="in tf" id="tf-fechas" data-k="fechas" value="${esc(tf.fechas)}" placeholder="5–8 noviembre 2026"></div>
         <div class="campo"><label for="tf-lugar">Lugar</label><input class="in tf" id="tf-lugar" data-k="lugar" value="${esc(tf.lugar)}" placeholder="Pistas 1–3"></div>
         <div class="campo"><label for="tf-precio">Precio</label><input class="in tf" id="tf-precio" data-k="precio" value="${esc(tf.precio)}" placeholder="20 € por jugador"></div>
         <div class="campo"><label for="tf-plazas">Plazas (parejas, 0 = sin límite)</label><input class="in tf" type="number" min="0" id="tf-plazas" data-k="plazas" value="${+tf.plazas || 0}"></div>
-        <div class="campo"><label for="tf-orden">Orden en la portada</label><input class="in tf" type="number" id="tf-orden" data-k="orden" value="${+tf.orden || 0}"></div>
       </div>
       <div class="campo"><label for="tf-descripcion">Descripción</label><textarea class="in tf" id="tf-descripcion" data-k="descripcion" placeholder="Formato, premios, qué incluye la inscripción…">${esc(tf.descripcion)}</textarea></div>
       <div class="campo"><span class="etq">Cartel</span>
@@ -2178,12 +2463,19 @@ function renderConfig(){
         <button type="button" class="b b-primary" data-act="guardar-torneo">Guardar datos</button>
         <span style="flex:1"></span><button type="button" class="b b-ghost" style="color:var(--bad)" data-act="borrar-torneo">Borrar torneo</button>
       </div></div>
+    <div class="card" id="pack-box"><div><h2>Welcome pack</h2><p class="lead">Marca qué incluye la inscripción. En el formulario cada jugador elegirá su talla.</p></div>
+      <div class="packs">${PACK_BASE.map(n => `<label class="pk" for="pk-${slug(n)}"><input type="checkbox" id="pk-${slug(n)}" data-pk="${esc(n)}" ${(c.pack || []).includes(n) ? "checked" : ""}>${esc(n)}</label>`).join("")}
+        <label class="pk" for="pk-otro"><input type="checkbox" id="pk-otro" ${otro && (c.pack || []).includes(otro) ? "checked" : ""}>Otro</label>
+        <input class="in" id="pk-otro-txt" style="width:auto;min-width:180px" placeholder="Gorra, bolsa, toalla…" value="${esc(otro)}" aria-label="Nombre del otro artículo"></div>
+      ${Object.keys(totales).length ? `<div class="resumen-pack">${Object.entries(totales).map(([n, ts]) => `<span class="tag-chip"><b>${esc(n)}</b>: ${TALLAS.filter(t => ts[t]).map(t => `${t} ×${ts[t]}`).join(" · ")}</span>`).join("")}</div>` : ""}
+    </div>
     <div class="card"><div class="card-h"><div><h2>Inscripciones <span class="muted" style="font-weight:600">${inscripciones.length}</span></h2>
         <p class="lead">${nuevas.length ? `${nuevas.length} pareja${nuevas.length > 1 ? "s" : ""} todavía no está${nuevas.length > 1 ? "n" : ""} en el cuadrante.` : inscripciones.length ? "Todas las inscripciones están en el cuadrante." : "Aún no se ha inscrito nadie."}</p></div>
         ${nuevas.length ? `<button type="button" class="b b-primary" data-act="ins-a-cuadrante">Pasar ${nuevas.length} al cuadrante</button>` : ""}</div>
-      ${inscripciones.length ? `<p class="lead small" style="margin:0">Pagadas: <b>${pagadas}</b> de ${inscripciones.length}</p><div class="tscroll"><table class="ins"><thead><tr><th>Pareja</th><th>Grupo</th><th>Disponibilidad</th><th>Contacto y extras</th><th>Pagado</th><th></th><th></th></tr></thead><tbody>
+      ${inscripciones.length ? `<p class="lead small" style="margin:0">Pagadas: <b>${pagadas}</b> de ${inscripciones.length}</p><div class="tscroll"><table class="ins"><thead><tr><th>Pareja</th><th>Grupo</th><th>Disponibilidad</th><th>Contacto y extras</th><th>Tallas</th><th>Pagado</th><th></th><th></th></tr></thead><tbody>
         ${inscripciones.map(r => `<tr><td><b>${esc(r.jugador)} / ${esc(r.companero)}</b><small>${esc(fecha(r.fecha))}</small></td><td>${esc(r.categoria)} ${esc(r.nivel)}</td><td>${esc(dispTxt(r))}</td>
           <td>${esc(r.telefono || "—")}${r.extras ? `<small>${esc(r.extras)}</small>` : ""}</td>
+          <td>${esc(packTxt(r) || "—")}</td>
           <td><label class="sw" for="pg-${esc(r.clave)}"><input type="checkbox" class="pagado" id="pg-${esc(r.clave)}" data-id="${esc(r.clave)}" ${r.pagado ? "checked" : ""}><span class="t"></span></label></td>
           <td>${enCuadrante.has(r.clave) ? `<span class="st dentro">En el cuadrante</span>` : `<span class="st nuevo">Nueva</span>`}</td>
           <td><button type="button" class="b b-ghost" style="padding:6px 10px;color:var(--bad)" data-act="borrar-ins" data-id="${esc(r.clave)}" title="Borrar inscripción">Borrar</button></td></tr>`).join("")}
@@ -2198,7 +2490,8 @@ function renderConfig(){
 function marcarAdmin(){
   $("#admin-pill").hidden = !ADMIN; $("#salir").hidden = !ADMIN; $("#acceso").hidden = ADMIN;
 }
-function salirAdmin(){
+async function salirAdmin(){
+  if(saveTimer || writing){ clearTimeout(saveTimer); await flush(); }
   ADMIN = false; PIN = ""; llamar("adminSalir").catch(() => {});
   marcarAdmin();
 }
@@ -2214,7 +2507,16 @@ document.addEventListener("click", async e => {
   const go = e.target.closest("[data-go]");
   if(go){ e.preventDefault(); irHome(); return; }
   const op = e.target.closest("[data-open]");
-  if(op){ abrirTorneo(op.dataset.open); return; }
+  if(op){ if(Date.now() - finDrag < 400) return; abrirTorneo(op.dataset.open); return; }
+  const hv = e.target.closest("[data-hv]");
+  if(hv){ homeVista = hv.dataset.hv; renderHome(); return; }
+  const hc = e.target.closest(".hchip");
+  if(hc){
+    const box = hc.closest(".hchips"), chips = [...box.querySelectorAll(".hchip:not([data-todo])")];
+    if(hc.dataset.todo !== undefined){ const all = chips.every(x => x.getAttribute("aria-pressed") === "true"); chips.forEach(x => x.setAttribute("aria-pressed", String(!all))); }
+    else hc.setAttribute("aria-pressed", String(hc.getAttribute("aria-pressed") !== "true"));
+    return;
+  }
   const fl = e.target.closest("[data-filtro]");
   if(fl){ homeFiltro = fl.dataset.filtro; renderHome(); return; }
   const tb = e.target.closest("#tabs .tab, [data-tab-go]");
@@ -2222,10 +2524,38 @@ document.addEventListener("click", async e => {
   if(e.target.closest("#acceso")){ $("#modal-pin").hidden = false; $("#pin-err").hidden = true; $("#pin").value = ""; $("#email").focus(); return; }
   if(e.target.closest("#pin-cancel") || e.target.id === "modal-pin"){ $("#modal-pin").hidden = true; return; }
   if(e.target.closest("#nuevo-cancel") || e.target.id === "modal-nuevo"){ $("#modal-nuevo").hidden = true; return; }
-  if(e.target.closest("#salir")){ salirAdmin(); if(T) abrirTorneo(T.id, true, false); else renderHome(); toast("Has salido del modo organizador"); return; }
+  if(e.target.closest("#salir")){ await salirAdmin(); if(T) abrirTorneo(T.id, true, false); else renderHome(); toast("Has salido del modo organizador"); return; }
   const b = e.target.closest("[data-act]"); if(!b) return;
   const act = b.dataset.act;
   if(act === "reload") cargarTorneos();
+  else if(act === "gsel"){ const k = b.dataset.g; if(!k) gsel.clear(); else if(gsel.has(k)) gsel.delete(k); else gsel.add(k); renderAll(); }
+  else if(act === "pdf") guardarPDF(b.dataset.what, b);
+  else if(act === "foto-del" && ADMIN){
+    if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "¿Seguro?"; return; }
+    try{ await llamar("fotosBorrar", b.dataset.path); toast("Foto borrada"); cargarFotos(); }catch(err){ toast(msgErr(err)); }
+  }
+  else if(act === "cat-lvl" && ADMIN){
+    const c = state.config, cat = b.dataset.cat, lv = b.dataset.lv, cur = levelsFor(cat);
+    const next = cur.includes(lv) ? cur.filter(x => x !== lv) : c.levels.filter(x => cur.includes(x) || x === lv);
+    if(!next.length){ toast("Cada categoría necesita al menos un nivel. Si no se juega, quítala."); return; }
+    const afectadas = cur.includes(lv) ? state.pairs.filter(p => p.cat === cat && p.level === lv).length : 0;
+    c.catLevels = {...(c.catLevels || {}), [cat]: next}; save(); renderAll();
+    if(afectadas) toast(`${afectadas} pareja${afectadas > 1 ? "s" : ""} de ${cat} ${lv} quedan sin grupo`);
+  }
+  else if(act === "cat-del" && ADMIN){
+    const c = state.config, cat = b.dataset.cat;
+    if(c.categories.length < 2){ toast("Tiene que quedar al menos una categoría"); return; }
+    if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "¿Quitar?"; return; }
+    c.categories = c.categories.filter(x => x !== cat);
+    if(c.catLevels) delete c.catLevels[cat];
+    save(); renderAll();
+  }
+  else if(act === "cat-add" && ADMIN){
+    const c = state.config, n = ($("#cat-new").value || "").trim();
+    if(!n){ toast("Escribe el nombre de la categoría"); return; }
+    if(c.categories.some(x => norm(x) === norm(n))){ toast("Esa categoría ya existe"); return; }
+    c.categories.push(n); save(); renderAll();
+  }
   else if(act === "otra-ins"){ insEnviada = null; renderInscripcion(); }
   else if(act === "copiar-enlace") copiarEnlace(T.id);
   else if(act === "guardar-estado" && ADMIN){
@@ -2293,7 +2623,25 @@ document.addEventListener("submit", async e => {
     b.disabled = false;
   }
 });
+async function onDatesChanged(){
+  const c = state.config;
+  if(!ADMIN || !T || !c.dateFrom || !c.dateTo) return;
+  const txt = fechasTxt(c.dateFrom, c.dateTo);
+  if(txt === T.fechas) return;
+  try{ const r = await llamar("adminGuardarTorneo", {...leerTorneoForm(), fechas: txt}); Object.assign(T, r || {fechas: txt}); torneoForm = null; renderHero(); if(tab === "config") renderConfig(); }
+  catch(err){ toast("No se han guardado las fechas: " + msgErr(err)); }
+}
 document.addEventListener("change", async e => {
+  if(e.target.name === "i-cat"){ $("#niv-box").innerHTML = nivelesHTML(e.target.value); return; }
+  if(e.target.id === "foto-album"){ fotosAlbum = e.target.value; cargarFotos(); return; }
+  if(e.target.id === "foto-file" && ADMIN){ const fs = [...(e.target.files || [])]; e.target.value = ""; if(fs.length) subirFotos(fs); return; }
+  if(e.target.closest && e.target.closest("#pack-box") && ADMIN){
+    const c = state.config, otro = $("#pk-otro-txt").value.trim();
+    c.packOtro = otro;
+    c.pack = PACK_BASE.filter(n => $("#pk-" + slug(n)).checked).concat($("#pk-otro").checked && otro ? [otro] : []);
+    if(e.target.id === "pk-otro" && e.target.checked && !otro){ toast("Escribe el nombre del artículo"); $("#pk-otro-txt").focus(); }
+    save(); return;
+  }
   if(e.target.classList && e.target.classList.contains("pagado") && ADMIN){
     const id = e.target.dataset.id, v = e.target.checked;
     try{ await llamar("adminPagado", {id, pagado: v}); const r = inscripciones.find(x => x.clave === id); if(r) r.pagado = v; renderConfig(); }
@@ -2311,6 +2659,7 @@ document.addEventListener("change", async e => {
   const ck = e.target.closest && e.target.closest(".dia input[type=checkbox]");
   if(ck){ const fila = ck.closest(".dia"); fila.classList.toggle("on", ck.checked); fila.querySelector(".horas").hidden = !ck.checked; fila.querySelector(".nodisp").hidden = ck.checked; }
 });
+window.addEventListener("beforeunload", e => { if(ADMIN && (saveTimer || writing)){ e.preventDefault(); e.returnValue = ""; } });
 window.addEventListener("popstate", () => {
   const id = decodeURIComponent(location.hash.slice(1));
   if(id) abrirTorneo(id, false, false); else irHome(false);
