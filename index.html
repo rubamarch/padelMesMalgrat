@@ -1444,9 +1444,8 @@ function renderParejas(){
   else if(!importPreview) h += `<div class="row">
     <label class="btn primary" for="xlsx-file" style="display:inline-flex;align-items:center">Importar Excel</label>
     <input type="file" id="xlsx-file" accept=".xlsx,.xls,.csv" hidden>
+    <button class="btn primary" data-act="export-xlsx">Exportar Excel</button>
     <button class="btn" data-act="new-pair">Añadir pareja</button>
-    <button class="btn" data-act="export-xlsx">Exportar Excel</button>
-    ${cfg.subSize ? `<button class="btn" data-act="smart-subs" id="smart-btn">Repartir subgrupos según horarios</button>` : ""}
     <span class="spacer"></span><span class="muted small">Toca una pareja para editarla.</span></div>
     <p class="small muted" style="margin:0">Con <b>Exportar Excel</b> descargas las parejas (o una plantilla vacía si aún no hay). Rellénala o corrígela y súbela con <b>Importar Excel</b>. Columnas: <b>Jugador 1</b>, <b>Jugador 2</b>, <b>Categoría</b>, <b>Nivel</b> y una columna por día con las horas (por ejemplo <code>18:00-22:00, 23:00-23:30</code> o <code>todo</code>). También se entiende una columna <b>Disponibilidad</b> con texto libre: «divendres tarda», «sábado mañana hasta las 15:00»…</p>`;
   h += `<div class="groups">`;
@@ -1485,7 +1484,7 @@ function renderImportPreview(){
   let h = `<div class="panel" style="display:flex;flex-direction:column;gap:10px">
     <div class="row"><h2 style="font-size:1.4rem;text-transform:uppercase">Revisa el Excel</h2><span class="muted small">${esc(ip.file)}</span></div>
     <p style="margin:0"><b>${ip.items.length} parejas leídas.</b> ${nW ? `<span style="color:var(--warn)">${nW} con avisos</span>, casi siempre horas fuera del horario del club (no se usan).` : "Sin avisos."}
-    La columna «Lo que entiendo» es lo que se usará para el horario.</p>
+    La columna «Lo que entiendo» es lo que se usará para el horario. Las parejas se guardan también en Inscripciones (las que ya estaban no se duplican).</p>
     ${ip.warn.length ? `<p class="small" style="color:var(--warn);margin:0">${ip.warn.map(esc).join("<br>")}</p>` : ""}
     <div class="row"><button class="btn primary" data-act="import-replace">${mine ? "Sustituir mis parejas por estas" : "Usar estas parejas y generar horario"}</button>
       ${mine ? `<button class="btn" data-act="import-add">Añadirlas a las que tengo</button>` : ""}
@@ -1557,12 +1556,16 @@ async function readExcelFile(file){
 function applyImport(replace){
   const items = importPreview.items.map(x => x.pair);
   if(replace || state.example){ state.pairs = items; state.schedule = null; state.example = false; }
-  else state.pairs.push(...items);
+  else {
+    const k = q => [q.p1, q.p2, q.cat, q.level].map(norm).join("|"), ya = new Set(state.pairs.map(k));
+    state.pairs.push(...items.filter(q => !ya.has(k(q))));
+  }
   importPreview = null;
   if(state.config.subSize && !items.some(p => p.sub)) smartSubgroups();
   generate(); save(); tab = "horario"; renderAll();
   const s = state.schedule;
   toast(s.unscheduled.length ? `${s.matches.length} partidos colocados, ${s.unscheduled.length} sin hueco` : `Los ${s.matches.length} partidos tienen pista y hora`);
+  if(typeof registrarParejas === "function") registrarParejas(items);
 }
 function renderEditor(){
   const cfg = state.config, e = editing, days = cfg.days;
@@ -1587,6 +1590,7 @@ function renderEditor(){
     <div class="fields">
       <label class="f">Jugador/a 1<input id="ed-p1" value="${esc(e.p1)}" autocomplete="off"></label>
       <label class="f">Jugador/a 2<input id="ed-p2" value="${esc(e.p2)}" autocomplete="off"></label>
+      <label class="f">Teléfono<input id="ed-tel" type="tel" value="${esc(e.tel || "")}" autocomplete="off"></label>
       <label class="f">Categoría<select id="ed-cat">${cfg.categories.map(c => `<option ${c===e.cat?"selected":""}>${esc(c)}</option>`).join("")}</select></label>
       <label class="f">Nivel<select id="ed-level">${levelsFor(e.cat).concat(levelsFor(e.cat).includes(e.level) ? [] : [e.level]).map(l => `<option ${l===e.level?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
       ${cfg.subSize ? subSelect(e) : ""}
@@ -1605,6 +1609,7 @@ function readEditorFields(){
   if(!editing) return;
   const g = id => document.getElementById(id);
   if(g("ed-p1")) Object.assign(editing, {p1: g("ed-p1").value.trim(), p2: g("ed-p2").value.trim(), cat: g("ed-cat").value, level: g("ed-level").value});
+  if(g("ed-tel")) editing.tel = g("ed-tel").value.trim();
   if(g("ed-sub")) editing.sub = +g("ed-sub").value;
 }
 
@@ -1886,6 +1891,7 @@ document.addEventListener("click", async e => {
     const i = state.pairs.findIndex(x => x.id === p.id);
     if(i >= 0) state.pairs[i] = p; else state.pairs.push(p);
     editing = null; save(); renderAll(); toast("Pareja guardada");
+    if(typeof registrarParejas === "function"){ if(i < 0 || !p.src) registrarParejas([p]); else editarInscripcion(p); }
   }
   else if(act === "delete-pair"){
     if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "Pulsa otra vez para eliminar"; return; }
@@ -1989,6 +1995,8 @@ const API = {
     ok(await SB.storage.from("carteles").upload(path, file, {contentType: file.type, upsert: false}));
     return SB.storage.from("carteles").getPublicUrl(path).data.publicUrl;
   },
+  adminCrearIns: async rows => ok(await SB.from("inscripciones").insert(rows).select()).map(insRow),
+  adminEditarIns: async a => { ok(await SB.from("inscripciones").update(a.campos).eq("id", a.id)); return {ok: true}; },
   adminOrden: async list => { await Promise.all(list.map(x => SB.from("torneos").update({orden: x.orden}).eq("id", x.id).then(ok))); return {ok: true}; },
   fotosListar: async album => {
     const files = ok(await SB.storage.from("fotos").list(album, {limit: 1000, sortBy: {column: "created_at", order: "desc"}})).filter(f => f.id);
@@ -2055,6 +2063,8 @@ const DEMO = (() => {
     adminTorneo: a => { pin(a.pin); return {cuadrante: cuadranteDe(a.id), inscripciones: ins[a.id] || []}; },
     adminGuardar: a => { pin(a.pin); cuad[a.id] = JSON.parse(a.json); return {ok: true}; },
     adminEstado: a => { pin(a.pin); const t = ts.find(x => x.id === a.id); t.estado = a.estado; return {ok: true, estado: t.estado}; },
+    adminCrearIns: rows => rows.map(r => { const n = {...r, clave: uid(), id: undefined, fecha: Date.now(), pagado: false, pack: {}}; (ins[r.torneo_id] ||= []).push(n); return n; }),
+    adminEditarIns: a => { Object.values(ins).flat().forEach(r => { if(r.clave === a.id) Object.assign(r, a.campos); }); return {ok: true}; },
     adminOrden: list => { list.forEach(x => { const t = ts.find(y => y.id === x.id); if(t) t.orden = x.orden; }); ts.sort((a, b) => (a.orden || 0) - (b.orden || 0)); return {ok: true}; },
     fotosListar: album => fotosDemo[album] || [],
     fotosBorrar: path => { for(const k in fotosDemo) fotosDemo[k] = fotosDemo[k].filter(f => f.path !== path); return true; },
@@ -2496,6 +2506,32 @@ function insToPair(r){
   const cat = cfg.categories.find(c => norm(c) === norm(r.categoria)) || catOf(r.categoria) || r.categoria;
   const level = cfg.levels.find(l => norm(l) === norm(r.nivel)) || r.nivel;
   return {id: uid(), p1: r.jugador, p2: r.companero, cat, level, avail, src: r.clave, tel: r.telefono, extras: r.extras, note: r.extras};
+}
+function pairToIns(p){
+  const disp = {};
+  state.config.days.forEach(d => { const a = (p.avail || {})[d.id]; if(a && a.length) disp[d.id] = rangesOf(a).replace(/–/g, "-"); });
+  return {torneo_id: T.id, jugador: p.p1 || "", companero: p.p2 || "", telefono: p.tel || "", categoria: p.cat, nivel: p.level, disp, extras: p.extras || ""};
+}
+const claveIns = x => [x.jugador, x.companero, x.categoria, x.nivel].map(norm).join("|");
+/* guarda en Inscripciones las parejas del cuadrante que aún no tienen inscripción (sin duplicar) */
+async function registrarParejas(pairs){
+  if(!ADMIN || !T || !pairs.length) return;
+  const existentes = new Map(inscripciones.map(r => [claveIns(r), r])), nuevas = [];
+  pairs.forEach(p => { if(p.src) return; const r = existentes.get(claveIns(pairToIns(p))); if(r) p.src = r.clave; else nuevas.push(p); });
+  try{
+    if(nuevas.length){
+      const creadas = await llamar("adminCrearIns", nuevas.map(pairToIns));
+      creadas.forEach((r, i) => { nuevas[i].src = r.clave; inscripciones.push(r); });
+    }
+    T.inscritas = inscripciones.length; save(); renderHero();
+    if(tab === "config") renderConfig();
+  }catch(e){ toast("Las parejas están en el cuadrante, pero no se han guardado en Inscripciones: " + msgErr(e)); }
+}
+async function editarInscripcion(p){
+  const r = inscripciones.find(x => x.clave === p.src); if(!r) return;
+  const {torneo_id, ...campos} = pairToIns(p);
+  try{ await llamar("adminEditarIns", {id: p.src, campos}); Object.assign(r, campos); }
+  catch(e){ toast("No se ha actualizado la inscripción: " + msgErr(e)); }
 }
 function renderConfig(){
   const enCuadrante = new Set(state.pairs.map(p => p.src).filter(Boolean));
