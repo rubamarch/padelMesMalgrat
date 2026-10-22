@@ -804,7 +804,9 @@ function rowsToPairs(rows){
       const idx = re => low.findIndex(x => re.test(x));
       const js = low.map((x,k) => /jugador|player/.test(x) ? k : -1).filter(k => k >= 0);
       hdr = {p1: js.length ? js[0] : idx(/pareja|parella/), p2: js.length > 1 ? js[1] : -1,
-             lvl: idx(/nivel|nivell|level/), disp: idx(/disponib|horari/), cat: idx(/categ/)};
+             lvl: idx(/nivel|nivell|level/), disp: idx(/disponib|horari/), cat: idx(/categ/),
+             tel: idx(/telef|movil|mobil/), nota: idx(/nota|extra|observ/), sub: low.findIndex(x => /^(sub)?grupo$/.test(x)),
+             dias: state.config.days.map(d => ({d, k: low.findIndex(x => x === norm(d.name) || x === norm(dshort(d)))})).filter(x => x.k >= 0)};
       return;
     }
     if(!hdr || nonEmpty.length === 1){ const c = catOf(nonEmpty.join(" ")); if(c) cat = c; return; }
@@ -817,8 +819,21 @@ function rowsToPairs(rows){
     if(!c){ warn.push(`Fila ${i+1}: no sé si es ${state.config.categories.join(" o ")}`); return; }
     if(!lvl){ warn.push(`Fila ${i+1}: el nivel «${lvRaw}» no existe`); return; }
     const txt = hdr.disp >= 0 ? (cells[hdr.disp] || "") : "";
-    const pa = parseAvailText(txt);
-    items.push({row: i+1, warn: pa.warn, pair: {id: uid(), p1: names[0] || "", p2: names.slice(1).join(" / "), cat: c, level: lvl, note: txt, avail: pa.avail}});
+    const pa = txt || !hdr.dias.length ? parseAvailText(txt) : {avail: {}, warn: []};
+    hdr.dias.forEach(({d, k}) => {
+      const v = norm(cells[k] || ""), set = new Set(pa.avail[d.id] || []);
+      if(/^tod/.test(v)) for(let t = d.start; t + 30 <= d.end; t += 30) set.add(t);
+      const re = /(\d{1,2}(?:[:.h]\d{2})?)\s*[-–]\s*(\d{1,2}(?:[:.h]\d{2})?)/g; let m;
+      while((m = re.exec(v))){ const a = parseT(m[1]), b = parseT(m[2]); if(a == null || b == null) continue; for(let t = Math.ceil(Math.max(a, d.start) / 30) * 30; t + 30 <= Math.min(b, d.end); t += 30) set.add(t); }
+      if(set.size) pa.avail[d.id] = [...set].sort((x, y) => x - y);
+    });
+    if(hdr.dias.length && !Object.keys(pa.avail).length) pa.warn.push("Sin disponibilidad");
+    const nota = hdr.nota >= 0 ? (cells[hdr.nota] || "") : "", sub = hdr.sub >= 0 ? parseInt(cells[hdr.sub], 10) : NaN;
+    const pair = {id: uid(), p1: names[0] || "", p2: names.slice(1).join(" / "), cat: c, level: lvl, note: txt || nota, avail: pa.avail};
+    if(hdr.tel >= 0 && cells[hdr.tel]) pair.tel = cells[hdr.tel];
+    if(nota) pair.extras = nota;
+    if(sub > 0) pair.sub = sub;
+    items.push({row: i+1, warn: pa.warn, pair});
   });
   if(!hdr) warn.push("No encuentro la fila de títulos (Jugador 1, Jugador 2, Nivel, Disponibilidad)");
   return {items, warn};
@@ -1427,17 +1442,10 @@ function renderParejas(){
     <label class="btn primary" for="xlsx-file" style="display:inline-flex;align-items:center">Importar Excel</label>
     <input type="file" id="xlsx-file" accept=".xlsx,.xls,.csv" hidden>
     <button class="btn" data-act="new-pair">Añadir pareja</button>
-    <button class="btn" data-act="toggle-import">Pegar lista</button>
+    <button class="btn" data-act="export-xlsx">Exportar Excel</button>
     ${cfg.subSize ? `<button class="btn" data-act="smart-subs" id="smart-btn">Repartir subgrupos según horarios</button>` : ""}
     <span class="spacer"></span><span class="muted small">Toca una pareja para editarla.</span></div>
-    <p class="small muted" style="margin:0">El Excel necesita una fila de títulos con <b>Jugador 1</b>, <b>Jugador 2</b>, <b>Nivel</b> y <b>Disponibilidad</b> (en catalán o castellano). La categoría puede ir en una columna o en una fila encima de cada bloque, como «CATEGORIA MASCULINA». La disponibilidad se lee del texto: «divendres tarda», «dissabte matí fins a les 15:00», «a partir de las 17:00»…</p>`;
-  h += `<div id="import" hidden class="panel" style="display:flex;flex-direction:column;gap:10px">
-    <h3 style="font-size:1.2rem;text-transform:uppercase">Importar lista</h3>
-    <p class="small muted" style="margin:0">Una pareja por línea, campos separados por <code>;</code> o tabulador (sirve pegar desde Excel): <b>jugadores ; categoría ; nivel ; disponibilidad por día…</b></p>
-    <p class="small" style="margin:0"><code>Joan Puig / Marc Soler; M; A; Jue 18-22:30; Vie 17-22:30; Sab 9-14, 17-22:30; Dom todo</code></p>
-    <textarea id="import-text" placeholder="Laura Vidal / Anna Roca; F; B; Vie 18-22:30; Sab todo; Dom 9-14"></textarea>
-    <div class="row"><button class="btn primary" data-act="do-import">Importar</button><button class="btn" data-act="toggle-import">Cerrar</button><span id="import-msg" class="small"></span></div>
-  </div>`;
+    <p class="small muted" style="margin:0">Con <b>Exportar Excel</b> descargas las parejas (o una plantilla vacía si aún no hay). Rellénala o corrígela y súbela con <b>Importar Excel</b>. Columnas: <b>Jugador 1</b>, <b>Jugador 2</b>, <b>Categoría</b>, <b>Nivel</b> y una columna por día con las horas (por ejemplo <code>18:00-22:00, 23:00-23:30</code> o <code>todo</code>). También se entiende una columna <b>Disponibilidad</b> con texto libre: «divendres tarda», «sábado mañana hasta las 15:00»…</p>`;
   h += `<div class="groups">`;
   gs.forEach(g => {
     const ps = state.pairs.filter(p => gkey(p) === g.key);
@@ -1503,6 +1511,31 @@ function loadXLSX(){
   });
   return xlsxLoading;
 }
+async function exportarExcel(){
+  try{
+    toast("Preparando el Excel…");
+    await loadXLSX();
+    const c = state.config, dias = c.days.filter(d => d.on || d.finals), orden = groups().map(g => g.key);
+    const head = ["Jugador 1", "Jugador 2", "Teléfono", "Categoría", "Nivel"].concat(c.subSize ? ["Grupo"] : [], dias.map(d => d.name), ["Notas"]);
+    const ps = state.pairs.slice().sort((a, b) => (orden.indexOf(gkey(a)) - orden.indexOf(gkey(b))) || (subOf(a) - subOf(b)) || pname(a).localeCompare(pname(b)));
+    const rows = ps.map(p => [p.p1 || "", p.p2 || "", p.tel || "", p.cat, p.level].concat(c.subSize ? [subOf(p) || ""] : [],
+      dias.map(d => rangesOf((p.avail || {})[d.id] || []).replace(/–/g, "-")), [p.extras || p.note || ""]));
+    const ws = XLSX.utils.aoa_to_sheet([head, ...rows]);
+    ws["!cols"] = head.map((h, i) => ({wch: i < 2 ? 24 : (h === "Notas" ? 32 : (i > 4 ? 18 : 12))}));
+    const ayuda = [["Cómo rellenar la hoja «Parejas»"], [], ["Categorías y niveles que se juegan"]]
+      .concat(c.categories.map(cat => [cat, levelsFor(cat).join(", ")]), [[], ["Columnas de los días"],
+        ["Escribe las horas en que la pareja puede jugar, por ejemplo: 18:00-22:00 o 09:00-14:00, 17:00-22:30"],
+        ["Escribe «todo» si puede todo el día. Déjala vacía si ese día no puede."], [], ["Horario de cada día"]],
+      dias.map(d => [d.name, fmt(d.start) + "-" + fmt(d.end) + (d.on ? "" : " (finales)")]));
+    const wsA = XLSX.utils.aoa_to_sheet(ayuda); wsA["!cols"] = [{wch: 28}, {wch: 60}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Parejas"); XLSX.utils.book_append_sheet(wb, wsA, "Instrucciones");
+    XLSX.writeFile(wb, (ps.length ? "" : "plantilla-") + "parejas-" + (T ? slug(T.nombre) : "torneo") + ".xlsx");
+    toast(ps.length ? `${ps.length} pareja${ps.length > 1 ? "s" : ""} exportada${ps.length > 1 ? "s" : ""}` : "Plantilla descargada");
+  }catch(err){
+    toast(err && err.message === "no-lib" ? "No se ha podido cargar el generador de Excel. Comprueba la conexión." : "No se ha podido crear el Excel.");
+  }
+}
 async function readExcelFile(file){
   try{
     toast("Leyendo el Excel…");
@@ -1523,7 +1556,7 @@ function applyImport(replace){
   if(replace || state.example){ state.pairs = items; state.schedule = null; state.example = false; }
   else state.pairs.push(...items);
   importPreview = null;
-  if(state.config.subSize) smartSubgroups();
+  if(state.config.subSize && !items.some(p => p.sub)) smartSubgroups();
   generate(); save(); tab = "horario"; renderAll();
   const s = state.schedule;
   toast(s.unscheduled.length ? `${s.matches.length} partidos colocados, ${s.unscheduled.length} sin hueco` : `Los ${s.matches.length} partidos tienen pista y hora`);
@@ -1856,6 +1889,7 @@ document.addEventListener("click", async e => {
     state.pairs = state.pairs.filter(x => x.id !== editing.id);
     editing = null; save(); renderAll(); toast("Pareja eliminada");
   }
+  else if(act === "export-xlsx") exportarExcel();
   else if(act === "toggle-import"){ const p = $("#import"); p.hidden = !p.hidden; if(!p.hidden) $("#import-text").focus(); }
   else if(act === "do-import"){
     const {added, errors} = parseImport($("#import-text").value);
