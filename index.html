@@ -366,8 +366,8 @@ table.grid td.time{width:64px;font-family:var(--display);font-size:1.05rem;font-
 table.grid td.time small{display:block;font-family:var(--body);font-size:.72rem;color:var(--muted);font-weight:400}
 .cell{width:100%;min-height:64px;border-radius:6px;border:1px solid transparent;text-align:left;padding:7px 9px;cursor:pointer;display:flex;flex-direction:column;gap:2px;position:relative}
 .cell.empty{background:transparent;border:1px dashed var(--line);color:var(--muted);font-size:.8rem;align-items:center;justify-content:center}
-.cell.final{border:1px dashed var(--court);color:var(--court);font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:.8rem;align-items:center;justify-content:center;cursor:default;background:color-mix(in srgb,var(--court) 7%,transparent)}
-.cell.empty.fits{border:2px solid var(--ball);background:color-mix(in srgb,var(--ball) 18%,transparent);color:var(--ink)}
+.cell.final{border:1px dashed var(--court);color:var(--court);font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:.8rem;align-items:center;justify-content:center;cursor:default;background:var(--accent-soft)}
+.cell.empty.fits{border:2px solid var(--ball);background:rgba(250,204,21,.18);color:var(--ink)}
 .cell .vs{font-size:.88rem;line-height:1.25}
 .cell .vs i{font-style:normal;opacity:.65;font-size:.78rem}
 .cell .tag{font-family:var(--display);font-weight:700;font-size:.78rem;letter-spacing:.05em;display:flex;gap:6px;align-items:center}
@@ -376,7 +376,7 @@ table.grid td.time small{display:block;font-family:var(--body);font-size:.72rem;
 .cell .iss{color:var(--bad);font-weight:700}
 .pin{font-size:.7rem;font-weight:600;opacity:.7}
 .selbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ink);color:var(--bg);border-radius:var(--r);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.selbar .btn{background:transparent;color:inherit;border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
+.selbar .btn{background:transparent;color:inherit;border-color:rgba(255,255,255,.35)}
 .ulist{display:flex;flex-direction:column;gap:6px}
 .uitem{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer;text-align:left;width:100%}
 .uitem.sel{outline:3px solid var(--ball)}
@@ -395,9 +395,9 @@ table.cross .rowh b{display:block;font-weight:600}
 table.cross td b{display:block;font-weight:700;font-size:1rem;white-space:nowrap}
 table.cross td span{display:block;font-size:.75rem;color:var(--muted)}
 table.cross td.diag{background:var(--diag)}
-table.cross td.none{background:color-mix(in srgb,var(--bad) 12%,var(--surface))}
+table.cross td.none{background:var(--bad-soft)}
 table.cross td.none b{color:var(--bad)}
-table.cross td.warn{background:color-mix(in srgb,var(--warn) 14%,var(--surface))}
+table.cross td.warn{background:var(--warn-soft)}
 .strips{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
 .strip{display:inline-flex;align-items:center;gap:3px}
 .strip .sd{font-size:.65rem;color:var(--muted);width:20px}
@@ -470,6 +470,20 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   .mrow{border-radius:var(--r-md)}
   .mrow b{font-weight:800}
   label.f input,label.f select,.dayrow select,.dayrow input[type=time]{border-radius:10px}
+  .subsec{display:grid;gap:12px;padding:16px;border:1px solid var(--line);border-radius:var(--r-md)}
+  .subsec h3{font-size:1rem;font-weight:800;text-transform:none}
+  #insgrid{touch-action:pan-x pan-y}
+  #insgrid table{width:100%;border-spacing:3px}
+  #insgrid th{text-align:center;font-size:.72rem}
+  #insgrid td:not(.d):not(.q){min-width:20px}
+  #insgrid .c{width:100%;min-width:20px;height:34px;border-radius:6px}
+  #insgrid td.d{font-size:.95rem;padding-right:6px}
+  #insgrid td.d small{display:block;font-family:var(--font);font-weight:500;font-size:.7rem;color:var(--muted)}
+  #insgrid td.d .tn{display:flex;gap:8px;margin-top:2px}
+  #insgrid td.d .tn button{background:none;border:0;padding:0;font:600 .72rem var(--font);color:var(--accent);cursor:pointer}
+  #insgrid td.d .tn button:last-child{color:var(--muted)}
+  .desliza{display:none;font-size:12px;color:var(--muted);margin:0}
+  @media (max-width:600px){.desliza{display:block}}
   /* filtros de categoría */
   .gfil{gap:8px}
   .gfil .chip{border:2px solid transparent;cursor:pointer;padding:6px 12px;font-size:.85rem;font-family:var(--font);opacity:.5;transition:all .3s ease}
@@ -1232,7 +1246,7 @@ function renderHorario(){
     ${ADMIN && pinnedN ? `<button class="btn" data-act="unpin-all">Soltar ${pinnedN} fijado${pinnedN>1?"s":""}</button>` : ""}
     <span class="spacer"></span>
     ${ADMIN ? `<button class="btn" data-act="export-csv">Descargar CSV</button><button class="btn" data-act="copy-sheet">Copiar para Excel</button>` : ""}
-    <button class="btn" data-act="pdf" data-what="horario">Guardar en PDF</button>
+    <button class="btn" data-act="pdf" data-what="horario">Descargar PDF</button>
   </div>
   ${gchips(gs)}`;
 
@@ -1350,7 +1364,7 @@ function commonText(a, b){
 function renderCuadros(){
   const el = $("#v-cuadros"), cfg = state.config, sch = state.schedule, gs = groups();
   const issues = validateAll(), fplan = finalsPlan();
-  let h = `<div class="row"><span class="small muted">La barra junto a cada pareja es cuándo puede jugar (azul) cada día de grupos. Pasa el ratón por encima para ver las horas.</span><span class="spacer"></span><button class="btn" data-act="pdf" data-what="cuadros">Guardar en PDF</button></div>${gchips(gs)}`;
+  let h = `<div class="row"><span class="small muted">La barra junto a cada pareja es cuándo puede jugar (azul) cada día de grupos. Pasa el ratón por encima para ver las horas.</span><span class="spacer"></span><button class="btn" data-act="pdf" data-what="cuadros">Descargar PDF</button></div>${gchips(gs)}`;
   if(!sch) h += `<div class="notice"><span>Genera el horario para ver las horas en los cuadros.</span></div>`;
   gs.filter(g => !gsel.size || gsel.has(g.key)).forEach(g => {
     const ps = state.pairs.filter(p => gkey(p) === g.key); if(!ps.length) return;
@@ -1659,7 +1673,7 @@ function renderAjustes(){
     <h2 style="font-size:1.3rem;text-transform:uppercase">Fechas y días del torneo</h2>
     <div class="fields">
       <label class="f">Primer día<input type="date" id="cfg-date-from" value="${esc(c.dateFrom || "")}"></label>
-      <label class="f">Último día<input type="date" id="cfg-date-to" value="${esc(c.dateTo || "")}"></label>
+      <label class="f">Último día<input type="date" id="cfg-date-to" value="${esc(c.dateTo || "")}" min="${esc(c.dateFrom || "")}"></label>
     </div>
     <p class="small muted" style="margin:0">${c.dateFrom && c.dateTo ? "Desactiva los días en que no se juega y elige si cada día es de grupos o de finales." : "Elige el primer y el último día: aparecerán todos los días del torneo para que actives los que se juegan."}</p>
     <div class="days">${c.days.map((d,i) => { const juega = d.on || d.finals, n = d.on ? Math.max(0, Math.floor((d.end - d.start) / c.duration)) : 0;
@@ -1677,17 +1691,23 @@ function renderAjustes(){
   </div>
   <div class="panel" style="display:flex;flex-direction:column;gap:14px">
     <h2 style="font-size:1.3rem;text-transform:uppercase">Partidos</h2>
-    <div class="fields">
-      <label class="f">Tipo de partido<select id="cfg-matchtype">${MATCH_TYPES.map(([v, txt]) => `<option value="${v}" ${v === c.matchType ? "selected" : ""}>${txt}</option>`).join("")}</select></label>
-      ${c.matchType === "2sets" ? `<label class="f">Puntuación<select id="cfg-tiemode"><option value="oro" ${c.tieMode !== "adv" ? "selected" : ""}>Punto de oro</option><option value="adv" ${c.tieMode === "adv" ? "selected" : ""}>Ventaja (ADV)</option></select></label>` : ""}
-      ${c.matchType === "tiempo" ? `<label class="f">Tiempo de juego (minutos)<input id="cfg-matchtime" type="number" min="10" max="240" step="5" value="${+c.matchTime || 60}"></label>` : ""}
-      <label class="f">Tiempo reservado por partido<select id="cfg-duration">${[45,60,75,90,105,120].map(v => `<option value="${v}" ${v===c.duration?"selected":""}>${v} min</option>`).join("")}</select></label>
-      <label class="f">Número de pistas<input id="cfg-courts" type="number" min="1" max="12" value="${c.courts.length}"></label>
-      <label class="f">Máx. partidos por pareja y día<select id="cfg-maxday">${[[1,"1"],[2,"2"],[3,"3"],[0,"Sin límite"]].map(([v,t]) => `<option value="${v}" ${v===c.maxPerDay?"selected":""}>${t}</option>`).join("")}</select></label>
-      <label class="f">Descanso mínimo entre partidos<select id="cfg-rest">${[[0,"Pueden ir seguidos"],[30,"30 min"],[60,"1 h"],[90,"1 h 30"],[120,"2 h"],[180,"3 h"]].map(([v,t]) => `<option value="${v}" ${v===c.minRest?"selected":""}>${t}</option>`).join("")}</select></label>
+    <div class="subsec"><h3>Pistas y tiempos</h3>
+      <div class="fields">
+        <label class="f">Tiempo reservado por partido<select id="cfg-duration">${[45,60,75,90,105,120].map(v => `<option value="${v}" ${v===c.duration?"selected":""}>${v} min</option>`).join("")}</select></label>
+        <label class="f">Número de pistas<input id="cfg-courts" type="number" min="1" max="12" value="${c.courts.length}"></label>
+        <label class="f">Máx. partidos por pareja y día<select id="cfg-maxday">${[[1,"1"],[2,"2"],[3,"3"],[0,"Sin límite"]].map(([v,t]) => `<option value="${v}" ${v===c.maxPerDay?"selected":""}>${t}</option>`).join("")}</select></label>
+        <label class="f">Descanso mínimo entre partidos<select id="cfg-rest">${[[0,"Pueden ir seguidos"],[30,"30 min"],[60,"1 h"],[90,"1 h 30"],[120,"2 h"],[180,"3 h"]].map(([v,t]) => `<option value="${v}" ${v===c.minRest?"selected":""}>${t}</option>`).join("")}</select></label>
+      </div>
+      <p class="small muted" style="margin:0">El tiempo reservado es lo que se reserva la pista para cada partido: el horario se monta con esas franjas.</p>
+      <div class="fields">${c.courts.map((n, i) => `<label class="f">Nombre de la pista ${i + 1}<input class="court-name" id="court-name-${i}" data-i="${i}" value="${esc(n)}"></label>`).join("")}</div>
     </div>
-    <p class="small muted" style="margin:0">El tiempo reservado es lo que se reserva la pista para cada partido: el horario se monta con esas franjas.</p>
-    <label class="f">Nombres de las pistas (separados por comas)<input id="cfg-courtnames" value="${esc(c.courts.join(", "))}"></label>
+    <div class="subsec"><h3>Tipo de partido</h3>
+      <div class="fields">
+        <label class="f">Tipo de partido<select id="cfg-matchtype">${MATCH_TYPES.map(([v, txt]) => `<option value="${v}" ${v === c.matchType ? "selected" : ""}>${txt}</option>`).join("")}</select></label>
+        ${c.matchType === "2sets" ? `<label class="f">Puntuación<select id="cfg-tiemode"><option value="oro" ${c.tieMode !== "adv" ? "selected" : ""}>Punto de oro</option><option value="adv" ${c.tieMode === "adv" ? "selected" : ""}>Ventaja (ADV)</option></select></label>` : ""}
+        ${c.matchType === "tiempo" ? `<label class="f">Tiempo de juego (minutos)<input id="cfg-matchtime" type="number" min="10" max="240" step="5" value="${+c.matchTime || 60}"></label>` : ""}
+      </div>
+    </div>
   </div>
   <div class="panel" style="display:flex;flex-direction:column;gap:14px">
     <h2 style="font-size:1.3rem;text-transform:uppercase">Formato</h2>
@@ -1731,6 +1751,7 @@ function applyConfigChange(e){
     while(c.courts.length < n) c.courts.push("Pista " + (c.courts.length + 1));
     c.courts.length = n;
   }
+  else if(t.classList.contains("court-name")){ const i = +t.dataset.i; c.courts[i] = t.value.trim() || ("Pista " + (i + 1)); }
   else if(id === "cfg-courtnames"){
     const names = t.value.split(",").map(s => s.trim()).filter(Boolean);
     if(names.length) c.courts = names;
@@ -1741,16 +1762,7 @@ function applyConfigChange(e){
   else if(t.classList.contains("ff-level")) (c.finalsFmt ||= {})[t.dataset.lv] = t.value;
   else if(t.classList.contains("day-mode")){ const d = c.days[+t.dataset.i]; d.on = t.value === "on"; d.finals = t.value === "finals"; }
   else if(t.classList.contains("day-on")){ const d = c.days[+t.dataset.i]; d.on = t.checked; d.finals = false; }
-  else if(id === "cfg-date-from" || id === "cfg-date-to"){
-    c[id === "cfg-date-from" ? "dateFrom" : "dateTo"] = t.value;
-    if(c.dateFrom && !c.dateTo) c.dateTo = c.dateFrom;
-    if(c.dateFrom && c.dateTo){
-      if(c.dateTo < c.dateFrom){ toast("El último día tiene que ser después del primero"); renderAll(); return; }
-      if((new Date(c.dateTo) - new Date(c.dateFrom)) / 864e5 > 61){ toast("Como máximo 62 días"); renderAll(); return; }
-      c.days = genDays(c, c.dateFrom, c.dateTo);
-      if(typeof onDatesChanged === "function") onDatesChanged();
-    }
-  }
+  else if(id === "cfg-date-from" || id === "cfg-date-to"){ cambiarFechas(id === "cfg-date-from" ? "from" : "to", t.value); return; }
   else if(id === "cfg-subsize"){ c.subSize = +t.value; state.pairs.forEach(p => delete p.sub); if(c.subSize){ ensureSubs(); smartSubgroups(); } }
   else if(/^cfg-(morning|afternoon)-(a|b)$/.test(id)){
     const v = parseT(t.value); if(v == null) return;
@@ -2185,11 +2197,7 @@ async function guardarPDF(what, btn){
       }
     }
     const blob = pdf.output("blob"), name = slug(T.nombre) + "-" + what + ".pdf";
-    const file = new File([blob], name, {type: "application/pdf"});
-    if(navigator.canShare && navigator.canShare({files: [file]})){
-      try{ await navigator.share({files: [file], title: T.nombre + " · " + (what === "horario" ? "Horario" : "Cuadros")}); }
-      catch(e){ if(!e || e.name !== "AbortError") descargar(blob, name); }
-    } else descargar(blob, name);
+    descargar(blob, name);
   }catch(e){ toast(msgErr(e)); }
   btn.disabled = false; btn.textContent = txt;
 }
@@ -2285,7 +2293,8 @@ function renderInfo(){
   else if(t.estado === "cerrada") cta = `<div class="aviso">Las inscripciones están cerradas. Muy pronto publicaremos los grupos y el horario aquí mismo.</div>`;
   else if(t.estado === "juego") cta = `<button type="button" class="b b-primary" data-tab-go="horario">Ver horario de partidos <span class="flecha">→</span></button>`;
   $("#v-info").innerHTML = `<div class="info-grid">
-    <div class="card entra"><div><h2>Sobre el torneo</h2></div><p class="lead" style="white-space:pre-line">${esc(t.descripcion || "Pronto añadiremos más información sobre este torneo.")}</p>${cta ? `<div>${cta}</div>` : ""}</div>
+    <div class="card entra"><div><h2>Sobre el torneo</h2></div><p class="lead" style="white-space:pre-line">${esc(t.descripcion || "Pronto añadiremos más información sobre este torneo.")}</p>
+    ${(c.pack || []).length ? `<div class="aviso"><span><b>Welcome pack incluido:</b> ${esc(c.pack.join(", "))}. Cada jugador elige su talla al inscribirse.</span></div>` : ""}${cta ? `<div>${cta}</div>` : ""}</div>
     <div class="card entra" style="animation-delay:60ms"><h2>Detalles</h2><dl class="dl">
       ${t.fechas ? `<div><dt>Fechas</dt><dd>${esc(t.fechas)}</dd></div>` : ""}
       ${t.lugar ? `<div><dt>Lugar</dt><dd>${esc(t.lugar)}</dd></div>` : ""}
@@ -2307,6 +2316,33 @@ function unirFranjas(fr){
   fr.sort((x, y) => x[0] - y[0]).forEach(([a, b]) => { const l = out[out.length - 1]; if(l && l[1] === a) l[1] = b; else out.push([a, b]); });
   return out.map(([a, b]) => fmt(a) + "-" + fmt(b));
 }
+function gridIns(dias){
+  if(!dias.length) return `<p class="lead">Todavía no hay días de juego.</p>`;
+  const minT = Math.min(...dias.map(d => d.start)), maxT = Math.max(...dias.map(d => d.end)), h0 = Math.floor(minT / 60) * 60;
+  let h = `<table><thead><tr><th></th>`;
+  for(let t = h0; t < maxT; t += 60) h += `<th>${Math.floor(t / 60)}h</th>`;
+  h += `</tr></thead><tbody>`;
+  dias.forEach(d => {
+    h += `<tr><td class="d">${esc(dshort(d))}${d.finals && !d.on ? "<small>finales</small>" : ""}<span class="tn"><button type="button" data-act="ins-todo" data-d="${d.id}">Todo</button><button type="button" data-act="ins-nada" data-d="${d.id}">Nada</button></span></td>`;
+    for(let t = h0; t < maxT; t += 60){
+      const a = Math.max(t, d.start), b = Math.min(t + 60, d.end);
+      h += `<td>${b - a >= 30 ? `<i class="c" data-d="${d.id}" data-a="${a}" data-b="${b}" title="${esc(d.name)} ${fmt(a)}–${fmt(b)}"></i>` : `<i class="c na"></i>`}</td>`;
+    }
+    h += `</tr>`;
+  });
+  return h + `</tbody></table>`;
+}
+let pintaIns = null;
+document.addEventListener("pointerdown", e => {
+  const c = e.target.closest && e.target.closest("#insgrid .c:not(.na)"); if(!c) return;
+  e.preventDefault(); pintaIns = !c.classList.contains("on"); c.classList.toggle("on", pintaIns);
+});
+document.addEventListener("pointermove", e => {
+  if(pintaIns === null) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY), c = el && el.closest && el.closest("#insgrid .c:not(.na)");
+  if(c) c.classList.toggle("on", pintaIns);
+});
+["pointerup", "pointercancel"].forEach(ev => document.addEventListener(ev, () => { pintaIns = null; }));
 function nivelesHTML(cat){
   if(!cat) return `<p class="lead small" style="margin:0">Elige primero la categoría.</p>`;
   return `<div class="seg" role="radiogroup">${levelsFor(cat).map((v, i) => `<input type="radio" name="i-niv" id="i-niv-${i}" value="${esc(v)}"><label for="i-niv-${i}">${esc(v)}</label>`).join("")}</div>`;
@@ -2330,10 +2366,9 @@ function renderInscripcion(){
       <div class="campo"><span class="etq">Categoría</span>${seg("i-cat", c.categories)}</div>
       <div class="campo"><span class="etq">Nivel</span><div id="niv-box">${nivelesHTML("")}</div></div>
     </div>
-    <div class="card"><div><h2>Disponibilidad</h2><p class="lead">Activa los días en los que podéis jugar y marca las horas que os van bien. Cuanta más disponibilidad, más fácil es cuadrar los partidos.</p></div>
-      <div class="dias">${dias.map(d => `<div class="dia" data-dia="${d.id}"><label class="sw" for="i-d-${d.id}"><input type="checkbox" id="i-d-${d.id}"><span class="t"></span><span>${esc(d.name)} ${d.finals && !d.on ? "<small>· finales</small>" : ""}</span></label>
-          <span class="nodisp">No disponible</span>
-          <div class="horas hchips" hidden>${franjas(d).map(([a, b]) => `<button type="button" class="hchip" data-a="${a}" data-b="${b}" aria-pressed="false">${hlbl(a, b)}</button>`).join("")}<button type="button" class="hchip todo" data-todo>Todo el día</button></div></div>`).join("")}</div>
+    <div class="card"><div><h2>Disponibilidad</h2><p class="lead">Toca las horas en que podéis jugar (o arrastra para marcar varias). En azul, las marcadas. Cuanta más disponibilidad, más fácil es cuadrar los partidos.</p></div>
+      <div class="avail" id="insgrid">${gridIns(dias)}</div>
+      <p class="desliza">Desliza la tabla hacia los lados para ver todas las horas.</p>
     </div>
     ${(c.pack || []).length ? `<div class="card"><div><h2>Welcome pack</h2><p class="lead">Elige la talla de cada uno.</p></div>
       <div class="tallas">${c.pack.map((n, i) => `<div class="talla-row"><b>${esc(n)}</b>
@@ -2348,8 +2383,8 @@ function leerIns(){
   const radio = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
   const disponibilidad = {};
   state.config.days.filter(d => d.on || d.finals).forEach(d => {
-    const fr = [...document.querySelectorAll(`.dia[data-dia="${d.id}"] .hchip[aria-pressed="true"]:not([data-todo])`)].map(x => [+x.dataset.a, +x.dataset.b]);
-    disponibilidad[d.id] = {disponible: $("#i-d-" + d.id).checked, horas: unirFranjas(fr)};
+    const fr = [...document.querySelectorAll(`#insgrid .c.on[data-d="${d.id}"]`)].map(x => [+x.dataset.a, +x.dataset.b]);
+    disponibilidad[d.id] = {disponible: fr.length > 0, horas: unirFranjas(fr)};
   });
   const pack = {};
   (state.config.pack || []).forEach((n, i) => { pack[n] = {jugador: $("#pk-j-" + i).value, companero: $("#pk-c-" + i).value}; });
@@ -2361,7 +2396,7 @@ function validarIns(d){
   if(!d.categoria) return "Elige la categoría.";
   if(!d.nivel) return "Elige vuestro nivel.";
   const on = Object.entries(d.disponibilidad).filter(([, x]) => x.disponible);
-  if(!on.length) return "Activa al menos un día en el que podáis jugar.";
+  if(!on.length) return "Marca en la tabla las horas en que podéis jugar.";
   const sinHoras = on.find(([, x]) => !x.horas.length);
   if(sinHoras) return "Marca las horas que podéis jugar el " + dayById(sinHoras[0]).name.toLowerCase() + ".";
   const sinTalla = Object.entries(d.pack || {}).find(([, x]) => !x.jugador || !x.companero);
@@ -2437,16 +2472,11 @@ function renderConfig(){
   const pagadas = inscripciones.filter(r => r.pagado).length;
   const tf = torneoForm || T;
   $("#config-top").innerHTML = `
-    <div class="card"><div class="card-h"><div><h2>Estado del torneo</h2><p class="lead">Decide qué ven los jugadores. «En juego» publica horario, cuadros y parejas. «Oculto» lo quita de la web.</p></div></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <select class="in" id="cfg-estado" style="width:auto;min-width:220px">${ESTADOS.map(([k, l]) => `<option value="${k}" ${k === T.estado ? "selected" : ""}>${l}</option>`).join("")}</select>
-        <button type="button" class="b b-primary" data-act="guardar-estado">Guardar estado</button>
-        <span style="flex:1"></span><button type="button" class="b b-soft" data-act="copiar-enlace">Copiar enlace del torneo</button>
-      </div></div>
-    <div class="card"><div class="card-h"><div><h2>Datos del torneo</h2><p class="lead">Lo que se ve en la portada y en la pestaña Información.</p></div></div>
+    <div class="card"><div class="card-h"><div><h2>Datos del torneo</h2><p class="lead">Lo primero: nombre y fechas. Es lo que se ve en la portada y en la pestaña Información.</p></div></div>
       <div class="grid-2">
         <div class="campo"><label for="tf-nombre">Nombre</label><input class="in tf" id="tf-nombre" data-k="nombre" value="${esc(tf.nombre)}"></div>
-        <div class="campo"><label for="tf-fechas">Fechas <span class="opc">(se rellenan solas al elegir los días abajo)</span></label><input class="in tf" id="tf-fechas" data-k="fechas" value="${esc(tf.fechas)}" placeholder="5–8 noviembre 2026"></div>
+        <div class="campo"><label for="tf-date-from">Primer día</label><input class="in" type="date" id="tf-date-from" value="${esc(state.config.dateFrom || "")}"></div>
+        <div class="campo"><label for="tf-date-to">Último día</label><input class="in" type="date" id="tf-date-to" value="${esc(state.config.dateTo || "")}" min="${esc(state.config.dateFrom || "")}"></div>
         <div class="campo"><label for="tf-lugar">Lugar</label><input class="in tf" id="tf-lugar" data-k="lugar" value="${esc(tf.lugar)}" placeholder="Pistas 1–3"></div>
         <div class="campo"><label for="tf-precio">Precio</label><input class="in tf" id="tf-precio" data-k="precio" value="${esc(tf.precio)}" placeholder="20 € por jugador"></div>
         <div class="campo"><label for="tf-plazas">Plazas (parejas, 0 = sin límite)</label><input class="in tf" type="number" min="0" id="tf-plazas" data-k="plazas" value="${+tf.plazas || 0}"></div>
@@ -2462,6 +2492,12 @@ function renderConfig(){
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <button type="button" class="b b-primary" data-act="guardar-torneo">Guardar datos</button>
         <span style="flex:1"></span><button type="button" class="b b-ghost" style="color:var(--bad)" data-act="borrar-torneo">Borrar torneo</button>
+      </div></div>
+    <div class="card"><div class="card-h"><div><h2>Estado del torneo</h2><p class="lead">Decide qué ven los jugadores. «En juego» publica horario, cuadros y parejas. «Oculto» lo quita de la web.</p></div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <select class="in" id="cfg-estado" style="width:auto;min-width:220px">${ESTADOS.map(([k, l]) => `<option value="${k}" ${k === T.estado ? "selected" : ""}>${l}</option>`).join("")}</select>
+        <button type="button" class="b b-primary" data-act="guardar-estado">Guardar estado</button>
+        <span style="flex:1"></span><button type="button" class="b b-soft" data-act="copiar-enlace">Copiar enlace del torneo</button>
       </div></div>
     <div class="card" id="pack-box"><div><h2>Welcome pack</h2><p class="lead">Marca qué incluye la inscripción. En el formulario cada jugador elegirá su talla.</p></div>
       <div class="packs">${PACK_BASE.map(n => `<label class="pk" for="pk-${slug(n)}"><input type="checkbox" id="pk-${slug(n)}" data-pk="${esc(n)}" ${(c.pack || []).includes(n) ? "checked" : ""}>${esc(n)}</label>`).join("")}
@@ -2508,6 +2544,8 @@ document.addEventListener("click", async e => {
   if(go){ e.preventDefault(); irHome(); return; }
   const op = e.target.closest("[data-open]");
   if(op){ if(Date.now() - finDrag < 400) return; abrirTorneo(op.dataset.open); return; }
+  const fd = e.target.closest && e.target.closest('input[type="date"]');
+  if(fd && fd.showPicker){ try{ fd.showPicker(); }catch(err){} }
   const hv = e.target.closest("[data-hv]");
   if(hv){ homeVista = hv.dataset.hv; renderHome(); return; }
   const hc = e.target.closest(".hchip");
@@ -2528,6 +2566,7 @@ document.addEventListener("click", async e => {
   const b = e.target.closest("[data-act]"); if(!b) return;
   const act = b.dataset.act;
   if(act === "reload") cargarTorneos();
+  else if(act === "ins-todo" || act === "ins-nada") document.querySelectorAll(`#insgrid .c[data-d="${b.dataset.d}"]`).forEach(c => c.classList.toggle("on", act === "ins-todo"));
   else if(act === "gsel"){ const k = b.dataset.g; if(!k) gsel.clear(); else if(gsel.has(k)) gsel.delete(k); else gsel.add(k); renderAll(); }
   else if(act === "pdf") guardarPDF(b.dataset.what, b);
   else if(act === "foto-del" && ADMIN){
@@ -2623,6 +2662,18 @@ document.addEventListener("submit", async e => {
     b.disabled = false;
   }
 });
+function cambiarFechas(which, v){
+  const c = state.config;
+  if(which === "from"){ c.dateFrom = v; if(v && (!c.dateTo || c.dateTo < v)) c.dateTo = v; }
+  else c.dateTo = v;
+  if(c.dateFrom && c.dateTo){
+    if(c.dateTo < c.dateFrom){ toast("El último día tiene que ser después del primero"); c.dateTo = c.dateFrom; }
+    if((new Date(c.dateTo) - new Date(c.dateFrom)) / 864e5 > 61){ toast("Como máximo 62 días"); renderAll(); return; }
+    c.days = genDays(c, c.dateFrom, c.dateTo);
+    onDatesChanged();
+  }
+  save(); renderAll();
+}
 async function onDatesChanged(){
   const c = state.config;
   if(!ADMIN || !T || !c.dateFrom || !c.dateTo) return;
@@ -2633,6 +2684,7 @@ async function onDatesChanged(){
 }
 document.addEventListener("change", async e => {
   if(e.target.name === "i-cat"){ $("#niv-box").innerHTML = nivelesHTML(e.target.value); return; }
+  if(e.target.id === "tf-date-from" || e.target.id === "tf-date-to"){ if(ADMIN) cambiarFechas(e.target.id === "tf-date-from" ? "from" : "to", e.target.value); return; }
   if(e.target.id === "foto-album"){ fotosAlbum = e.target.value; cargarFotos(); return; }
   if(e.target.id === "foto-file" && ADMIN){ const fs = [...(e.target.files || [])]; e.target.value = ""; if(fs.length) subirFotos(fs); return; }
   if(e.target.closest && e.target.closest("#pack-box") && ADMIN){
