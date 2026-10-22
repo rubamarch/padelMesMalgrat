@@ -806,7 +806,10 @@ function rowsToPairs(rows){
       hdr = {p1: js.length ? js[0] : idx(/pareja|parella/), p2: js.length > 1 ? js[1] : -1,
              lvl: idx(/nivel|nivell|level/), disp: idx(/disponib|horari/), cat: idx(/categ/),
              tel: idx(/telef|movil|mobil/), nota: idx(/nota|extra|observ/), sub: low.findIndex(x => /^(sub)?grupo$/.test(x)),
-             dias: state.config.days.map(d => ({d, k: low.findIndex(x => x === norm(d.name) || x === norm(dshort(d)))})).filter(x => x.k >= 0)};
+             dias: state.config.days.map(d => {
+               const wn = d.wd && state.config.days.filter(o => o.wd === d.wd).length === 1 ? norm((WD.find(w => w[0] === d.wd) || [, ""])[1]) : "";
+               return {d, k: low.findIndex(x => x === norm(d.name) || x === norm(dshort(d)) || (wn && x === wn))};
+             }).filter(x => x.k >= 0)};
       return;
     }
     if(!hdr || nonEmpty.length === 1){ const c = catOf(nonEmpty.join(" ")); if(c) cat = c; return; }
