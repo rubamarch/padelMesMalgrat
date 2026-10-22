@@ -13,7 +13,7 @@ y un configurador para los organizadores.
 |---|---|
 | Inscripción abierta | Información · Inscripción |
 | Inscripción cerrada | Información |
-| En juego / Finalizado | Horario · Cuadros · Parejas · Mi pareja · Información |
+| En juego / Finalizado | Horario · Cuadros · Parejas · Tu pareja · Información |
 | Oculto | No aparece |
 
 Los **organizadores** entran con "Acceso organizador" (al pie de la página) y además pueden:
@@ -27,7 +27,7 @@ Los **organizadores** entran con "Acceso organizador" (al pie de la página) y a
   pistas, **niveles por categoría** (A, B+, B, C+, C) y fases finales (cuartos, semis y final; semis y final; final).
 
 Los jugadores eligen su disponibilidad **hora a hora**, y el horario y los cuadros se filtran por categoría y
-se pueden **guardar en PDF** para compartir por WhatsApp.
+se pueden **descargar en PDF** para pasarlos por WhatsApp.
 
 ## Archivos
 
@@ -77,8 +77,9 @@ En un par de minutos la web queda en https://rubamarch.github.io/padelMesMalgrat
 2. En **Configurador**: completa los datos, sube el cartel y revisa los ajustes (días, horas,
    categorías y niveles: el formulario de inscripción usa estos mismos valores).
 3. Cambia el estado a **Inscripción abierta** y comparte el enlace (botón *Copiar enlace del torneo*).
-4. Al cerrar inscripciones: **Pasar al cuadrante** → revisa **Parejas** → **Generar horario** en
-   **Horario** → estado **En juego**. Desde ese momento los jugadores ven horarios y cuadros.
+4. Al cerrar inscripciones: en **Configurador**, debajo de Inscripciones, pulsa **Crear horario** (añade al
+   cuadrante las inscripciones nuevas, reparte grupos y coloca los partidos). Después cambia el estado a
+   **En juego**: desde ese momento los jugadores ven horarios y cuadros. Si cambian parejas, **Refrescar horario**.
 
 ## Actualizar la base de datos
 

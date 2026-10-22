@@ -385,13 +385,14 @@ table.grid td.time small{display:block;font-family:var(--body);font-size:.72rem;
 /* cross tables */
 .cuadro{display:flex;flex-direction:column;gap:12px}
 .ctitle{font-size:1.7rem;text-align:center;padding:8px 12px;border-radius:6px;letter-spacing:.06em}
-table.cross{border-collapse:collapse;min-width:620px;width:100%;background:var(--surface)}
+table.cross{border-collapse:collapse;width:auto;background:var(--surface)}
 table.cross th,table.cross td{border:2px solid var(--grid);padding:8px 10px;text-align:center;vertical-align:middle}
-table.cross .gname{font-family:var(--display);font-size:1.5rem;font-weight:700;text-align:left;width:230px;color:var(--ink)}
+table.cross .gname{font-family:var(--display);font-size:1.1rem;font-weight:800;text-align:left;color:var(--ink);white-space:nowrap}
 .s0{background:var(--s0)}.s1{background:var(--s1)}.s2{background:var(--s2)}.s3{background:var(--s3)}
-table.cross .colh{font-weight:500;font-size:.95rem}
+table.cross .colh{font-weight:600;font-size:.85rem;white-space:nowrap}
 table.cross .rowh{text-align:left;font-weight:400}
-table.cross .rowh b{display:block;font-weight:600}
+table.cross .rowh b{display:block;font-weight:600;white-space:nowrap}
+table.cross th,table.cross td{padding:6px 10px}
 table.cross td b{display:block;font-weight:700;font-size:1rem;white-space:nowrap}
 table.cross td span{display:block;font-size:.75rem;color:var(--muted)}
 table.cross td.diag{background:var(--diag)}
@@ -1246,7 +1247,7 @@ function gchips(gs){
 function renderHorario(){
   const el = $("#v-horario"), sch = state.schedule, cfg = state.config;
   if(!sch){
-    el.innerHTML = ADMIN ? `<div class="panel empty-state"><h2>Todavía no hay horario</h2><p class="muted">Añade las parejas con su disponibilidad y pulsa generar. Se cruzan todos los partidos de cada grupo con las franjas libres de las ${cfg.courts.length} pistas.</p><button class="btn primary" data-act="generate">Generar horario</button></div>` : `<div class="panel empty-state"><h2>El horario se publicará pronto</h2><p class="muted">Cuando el organizador cierre los grupos verás aquí todos los partidos, con día, hora y pista.</p></div>`;
+    el.innerHTML = ADMIN ? `<div class="panel empty-state"><h2>Todavía no hay horario</h2><p class="muted">Se crea desde el Configurador, debajo de la lista de inscritos.</p><button class="btn primary" data-tab-go="config">Ir al Configurador</button></div>` : `<div class="panel empty-state"><h2>El horario se publicará pronto</h2><p class="muted">Cuando el organizador cierre los grupos verás aquí todos los partidos, con día, hora y pista.</p></div>`;
     return;
   }
   const gs = groups(), issues = validateAll(), slots = buildSlots();
@@ -1260,7 +1261,6 @@ function renderHorario(){
   const nIss = Object.keys(issues).length;
 
   let h = `<div class="row">
-    ${ADMIN ? `<button class="btn primary" data-act="generate">Volver a generar</button>` : ""}
     ${ADMIN && pinnedN ? `<button class="btn" data-act="unpin-all">Soltar ${pinnedN} fijado${pinnedN>1?"s":""}</button>` : ""}
     <span class="spacer"></span>
     ${ADMIN ? `<button class="btn" data-act="export-csv">Descargar CSV</button><button class="btn" data-act="copy-sheet">Copiar para Excel</button>` : ""}
@@ -1382,7 +1382,7 @@ function commonText(a, b){
 function renderCuadros(){
   const el = $("#v-cuadros"), cfg = state.config, sch = state.schedule, gs = groups();
   const issues = validateAll(), fplan = finalsPlan();
-  let h = `<div class="row"><span class="small muted">La barra junto a cada pareja es cuándo puede jugar (azul) cada día de grupos. Pasa el ratón por encima para ver las horas.</span><span class="spacer"></span><button class="btn" data-act="pdf" data-what="cuadros">Descargar PDF</button></div>${gchips(gs)}`;
+  let h = `<div class="row"><span class="spacer"></span><button class="btn" data-act="pdf" data-what="cuadros">Descargar PDF</button></div>${gchips(gs)}`;
   if(!sch) h += `<div class="notice"><span>Genera el horario para ver las horas en los cuadros.</span></div>`;
   gs.filter(g => !gsel.size || gsel.has(g.key)).forEach(g => {
     const ps = state.pairs.filter(p => gkey(p) === g.key); if(!ps.length) return;
@@ -1393,7 +1393,7 @@ function renderCuadros(){
       if(!list.length) continue;
       h += `<div class="scroll"><table class="cross"><thead><tr><th class="gname s${(i-1)%4}">GRUPO ${i}</th>${list.map(p => `<th class="colh">${esc(pname(p))}</th>`).join("")}</tr></thead><tbody>`;
       list.forEach(p => {
-        h += `<tr><th class="rowh"><b>${esc(pname(p))}</b>${availStrip(p)}</th>`;
+        h += `<tr><th class="rowh"><b>${esc(pname(p))}</b></th>`;
         list.forEach(q => {
           if(p === q){ h += `<td class="diag"></td>`; return; }
           const m = sch && sch.matches.find(x => (x.a === p.id && x.b === q.id) || (x.a === q.id && x.b === p.id));
@@ -1895,8 +1895,10 @@ document.addEventListener("click", async e => {
   }
   else if(act === "delete-pair"){
     if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "Pulsa otra vez para eliminar"; return; }
+    const src = (state.pairs.find(x => x.id === editing.id) || {}).src;
     state.pairs = state.pairs.filter(x => x.id !== editing.id);
     editing = null; save(); renderAll(); toast("Pareja eliminada");
+    if(src && typeof borrarInscripcion === "function") borrarInscripcion(src);
   }
   else if(act === "export-xlsx") exportarExcel();
   else if(act === "toggle-import"){ const p = $("#import"); p.hidden = !p.hidden; if(!p.hidden) $("#import-text").focus(); }
@@ -2527,11 +2529,39 @@ async function registrarParejas(pairs){
     if(tab === "config") renderConfig();
   }catch(e){ toast("Las parejas están en el cuadrante, pero no se han guardado en Inscripciones: " + msgErr(e)); }
 }
+async function borrarInscripcion(id){
+  try{ await llamar("adminBorrarIns", id); inscripciones = inscripciones.filter(r => r.clave !== id); T.inscritas = inscripciones.length; renderHero(); return true; }
+  catch(e){ toast("No se ha borrado la inscripción: " + msgErr(e)); return false; }
+}
 async function editarInscripcion(p){
   const r = inscripciones.find(x => x.clave === p.src); if(!r) return;
   const {torneo_id, ...campos} = pairToIns(p);
   try{ await llamar("adminEditarIns", {id: p.src, campos}); Object.assign(r, campos); }
   catch(e){ toast("No se ha actualizado la inscripción: " + msgErr(e)); }
+}
+function tarjetaHorario(nNuevas){
+  const sch = state.schedule, n = state.pairs.length;
+  let estado, botones;
+  if(!sch){
+    estado = n || nNuevas ? "Al crearlo se reparten los grupos y se colocan todos los partidos en las pistas, según la disponibilidad de cada pareja." : "Primero hacen falta parejas: inscripciones, Importar Excel o Añadir pareja.";
+    botones = `<button type="button" class="b b-primary" data-act="crear-horario" ${n || nNuevas ? "" : "disabled"}>Crear horario</button>`;
+  } else {
+    const cuando = sch.at ? new Date(sch.at).toLocaleString("es-ES", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"}) : "";
+    estado = `Creado${cuando ? " el " + esc(cuando) : ""}: <b>${sch.matches.length}</b> partidos con pista y hora${sch.unscheduled.length ? `, <b style="color:var(--warn)">${sch.unscheduled.length} sin hueco</b>` : ""}.${scheduleOutdated() ? ` <span style="color:var(--warn)">Hay cambios en las parejas desde entonces: pulsa Refrescar.</span>` : ""}`;
+    botones = `<button type="button" class="b b-primary" data-act="refrescar-horario">Refrescar horario</button>
+      <button type="button" class="b b-soft" data-tab-go="horario">Ver horario</button>
+      <span style="flex:1"></span><button type="button" class="b b-ghost" style="color:var(--bad)" data-act="borrar-horario">Borrar horario</button>`;
+  }
+  return `<div class="card"><div><h2>Horario y cuadros</h2><p class="lead">${estado}</p></div>
+    ${nNuevas ? `<div class="aviso warn"><span>${nNuevas > 1 ? nNuevas + " inscripciones nuevas se añadirán" : "1 inscripción nueva se añadirá"} al cuadrante al ${sch ? "refrescar" : "crear"} el horario.</span></div>` : ""}
+    ${sch ? `<p class="lead small" style="margin:0">Refrescar vuelve a colocar los partidos con las parejas y ajustes actuales, respetando los que hayas fijado a mano en Horario.</p>` : ""}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">${botones}</div></div>`;
+}
+function pasarNuevas(){
+  const dentro = new Set(state.pairs.map(p => p.src).filter(Boolean));
+  const nuevas = inscripciones.filter(r => !dentro.has(r.clave)).map(insToPair);
+  state.pairs.push(...nuevas);
+  return nuevas.length;
 }
 function renderConfig(){
   const enCuadrante = new Set(state.pairs.map(p => p.src).filter(Boolean));
@@ -2589,8 +2619,9 @@ function renderConfig(){
           <td>${enCuadrante.has(r.clave) ? `<span class="st dentro">En el cuadrante</span>` : `<span class="st nuevo">Nueva</span>`}</td>
           <td><button type="button" class="b b-ghost" style="padding:6px 10px;color:var(--bad)" data-act="borrar-ins" data-id="${esc(r.clave)}" title="Borrar inscripción">Borrar</button></td></tr>`).join("")}
       </tbody></table></div>` : ""}
-      <p class="lead small" style="margin:0">Al pasarlas se crean como parejas con su disponibilidad. Después revisa grupos en <b>Parejas</b> y pulsa <b>Generar horario</b> en <b>Horario</b>.</p>
+      <p class="lead small" style="margin:0">Al pasarlas se crean como parejas con su disponibilidad. Puedes revisarlas en <b>Parejas</b>.</p>
     </div>
+    ${tarjetaHorario(nuevas.length)}
     <div><h2 style="font-size:1.2rem;font-weight:800">Ajustes del cuadrante</h2></div>`;
   renderAjustes();
 }
@@ -2690,7 +2721,25 @@ document.addEventListener("click", async e => {
   }
   else if(act === "borrar-ins" && ADMIN){
     if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "¿Seguro?"; return; }
-    try{ await llamar("adminBorrarIns", b.dataset.id); inscripciones = inscripciones.filter(r => r.clave !== b.dataset.id); T.inscritas = inscripciones.length; renderHero(); renderConfig(); toast("Inscripción borrada"); }catch(err){ toast(msgErr(err)); }
+    const id = b.dataset.id, enCuadrante = state.pairs.some(p => p.src === id);
+    if(await borrarInscripcion(id)){
+      if(enCuadrante){ state.pairs = state.pairs.filter(p => p.src !== id); save(); }
+      renderConfig(); toast(enCuadrante ? "Inscripción borrada y quitada de Parejas" : "Inscripción borrada");
+    }
+  }
+  else if((act === "crear-horario" || act === "refrescar-horario") && ADMIN){
+    b.disabled = true; b.textContent = "Calculando…";
+    setTimeout(() => {
+      const anadidas = pasarNuevas();
+      if(!state.pairs.length){ toast("No hay parejas para crear el horario"); renderConfig(); return; }
+      if(state.config.subSize && (act === "crear-horario" || anadidas)){ ensureSubs(); smartSubgroups(); }
+      const s = generate(); selected = null; save(); renderTorneo();
+      toast((anadidas ? `${anadidas} pareja${anadidas > 1 ? "s" : ""} añadida${anadidas > 1 ? "s" : ""}. ` : "") + (s.unscheduled.length ? `${s.matches.length} partidos colocados, ${s.unscheduled.length} sin hueco` : `Los ${s.matches.length} partidos tienen pista y hora`));
+    }, 30);
+  }
+  else if(act === "borrar-horario" && ADMIN){
+    if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "Pulsa otra vez: se borra el horario (las parejas se quedan)"; return; }
+    state.schedule = null; selected = null; save(); renderTorneo(); toast("Horario borrado");
   }
   else if(act === "ins-a-cuadrante" && ADMIN){
     const dentro = new Set(state.pairs.map(p => p.src).filter(Boolean));
