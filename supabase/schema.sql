@@ -236,3 +236,17 @@ create policy fotos_admin_ver     on storage.objects for select using (bucket_id
 create policy fotos_admin_subir   on storage.objects for insert with check (bucket_id = 'fotos' and public.is_admin());
 create policy fotos_admin_cambiar on storage.objects for update using (bucket_id = 'fotos' and public.is_admin());
 create policy fotos_admin_borrar  on storage.objects for delete using (bucket_id = 'fotos' and public.is_admin());
+
+-- ---------- imagen y datos del club (portada, logo, contacto) ----------
+create table if not exists public.ajustes (
+  id          text primary key,
+  datos       jsonb not null default '{}'::jsonb,
+  actualizado timestamptz not null default now()
+);
+alter table public.ajustes enable row level security;
+drop policy if exists ajustes_leer on public.ajustes;
+drop policy if exists ajustes_admin on public.ajustes;
+create policy ajustes_leer  on public.ajustes for select using (true);
+create policy ajustes_admin on public.ajustes for all using (public.is_admin()) with check (public.is_admin());
+grant select on public.ajustes to anon, authenticated;
+grant insert, update, delete on public.ajustes to authenticated;

@@ -9,20 +9,20 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap">
 <style>
   /* Layout: cabecera flotante de cristal; portada = rejilla de carteles; torneo = cabecera con cartel + pestañas fijas + contenido */
   :root {
     --bg: #f9fafb; --surface: #ffffff; --surface-2: #f3f4f6; --ink: #1f2937; --ink-strong: #0f172a; --muted: #6b7280;
     --line: rgba(15, 23, 42, 0.09); --line-strong: rgba(15, 23, 42, 0.16);
-    --accent: #3b82f6; --accent-2: #6366f1; --accent-soft: rgba(59, 130, 246, 0.10); --accent-ink: #ffffff;
+    --accent: #1863dc; --accent-2: #0f4fb5; --accent-soft: rgba(24, 99, 220, 0.10); --accent-ink: #ffffff;
     --ok: #059669; --ok-soft: rgba(16, 185, 129, 0.13); --bad: #dc2626; --bad-soft: rgba(239, 68, 68, 0.10);
     --warn: #b45309; --warn-soft: rgba(245, 158, 11, 0.14); --live: #e11d48; --live-soft: rgba(225, 29, 72, 0.12);
     --glass: rgba(255, 255, 255, 0.74);
     --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
     --shadow-lg: 0 18px 40px -14px rgba(15, 23, 42, 0.22), 0 6px 12px -6px rgba(15, 23, 42, 0.08);
     --glow: 0 8px 24px -6px rgba(59, 130, 246, 0.55);
-    --font: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font: "Golos Text", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --r-sm: 10px; --r-md: 14px; --r-lg: 20px;
     /* tokens del cuadrante */
     --court: var(--accent); --court-ink: #ffffff; --ball: #facc15; --ball-ink: #422006;
@@ -35,7 +35,7 @@
     :root:not([data-theme="light"]) {
       --bg: #0b1120; --surface: #111a2e; --surface-2: #18233b; --ink: #e2e8f0; --ink-strong: #f8fafc; --muted: #94a3b8;
       --line: rgba(148, 163, 184, 0.13); --line-strong: rgba(148, 163, 184, 0.24);
-      --accent: #60a5fa; --accent-2: #818cf8; --accent-soft: rgba(96, 165, 250, 0.15); --accent-ink: #0b1120;
+      --accent: #5b9bff; --accent-2: #3d7ef0; --accent-soft: rgba(91, 155, 255, 0.15); --accent-ink: #0b1120;
       --ok: #34d399; --ok-soft: rgba(52, 211, 153, 0.15); --bad: #f87171; --bad-soft: rgba(248, 113, 113, 0.13);
       --warn: #fbbf24; --warn-soft: rgba(251, 191, 36, 0.14); --live: #fb7185; --live-soft: rgba(251, 113, 133, 0.15);
       --glass: rgba(15, 23, 42, 0.72);
@@ -51,7 +51,7 @@
   :root[data-theme="dark"] {
     --bg: #0b1120; --surface: #111a2e; --surface-2: #18233b; --ink: #e2e8f0; --ink-strong: #f8fafc; --muted: #94a3b8;
     --line: rgba(148, 163, 184, 0.13); --line-strong: rgba(148, 163, 184, 0.24);
-    --accent: #60a5fa; --accent-2: #818cf8; --accent-soft: rgba(96, 165, 250, 0.15); --accent-ink: #0b1120;
+    --accent: #5b9bff; --accent-2: #3d7ef0; --accent-soft: rgba(91, 155, 255, 0.15); --accent-ink: #0b1120;
     --ok: #34d399; --ok-soft: rgba(52, 211, 153, 0.15); --bad: #f87171; --bad-soft: rgba(248, 113, 113, 0.13);
     --warn: #fbbf24; --warn-soft: rgba(251, 191, 36, 0.14); --live: #fb7185; --live-soft: rgba(251, 113, 133, 0.15);
     --glass: rgba(15, 23, 42, 0.72);
@@ -501,76 +501,113 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   #insgrid td.d .tn button:last-child{color:var(--muted)}
   .desliza{display:none;font-size:12px;color:var(--muted);margin:0}
   @media (max-width:600px){.desliza{display:block}}
-  /* ===================== identidad Padel Mes Malgrat ===================== */
-  :root { --night: #0a1122; --night-2: #12203f; --ball: #e2f23b; --ball-ink: #1a2200; --display2: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif; }
-  .brand span { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; font-size: 1.3rem; letter-spacing: .02em; }
-  .logo { background: radial-gradient(circle at 35% 30%, #f4ff8a, var(--ball) 55%, #b8c614); color: var(--ball-ink); box-shadow: 0 6px 18px -6px rgba(226, 242, 59, .7); }
-  .hero { position: relative; overflow: hidden; isolation: isolate; border-radius: 28px; margin-top: 6px; padding: 0; gap: 0; color: #fff;
-    background: radial-gradient(120% 150% at 92% -10%, #2350c9 0%, #16306f 30%, var(--night) 62%); box-shadow: 0 30px 60px -30px rgba(10, 17, 34, .7); }
+  /* ===================== identidad Padel Mes Malgrat · by Mily Daub ===================== */
+  /* Marino + azul vivo + lima pelota, Manrope en títulos, botones píldora, foto del club en la cabecera */
+  :root { --navy: #003366; --night: #002247; --ball: #dce569; --ball-ink: #29554d; --display2: "Manrope", "Golos Text", sans-serif; }
+  h1, h2, h3 { font-family: var(--display2); }
+  .b { border-radius: 999px; }
+  .b-primary { background: var(--accent); box-shadow: 0 10px 22px -10px rgba(24, 99, 220, .7); }
+  .b-primary:hover { box-shadow: 0 14px 28px -10px rgba(24, 99, 220, .8); }
+  .b-ball { background: var(--ball); color: var(--ball-ink); font-weight: 700; box-shadow: 0 12px 26px -12px rgba(220, 229, 105, .9); }
+  .b-ball:hover { transform: translateY(-2px); filter: brightness(1.04); }
+  .btn { border-radius: 999px; }
+  .btn.primary { background: var(--accent); }
+  .brand span { font-family: var(--display2); font-weight: 800; font-size: 1.05rem; letter-spacing: -.01em; }
+  .logo { background: var(--navy); color: var(--ball); box-shadow: none; overflow: hidden; }
+  .logo.con-img { background: #fff; border: 1px solid var(--line); }
+  .logo img { width: 100%; height: 100%; object-fit: contain; }
+  .hero { position: relative; overflow: hidden; isolation: isolate; border-radius: 24px; margin-top: 6px; padding: 0; gap: 0; color: #fff; min-height: 540px;
+    display: flex; flex-direction: column; justify-content: flex-end; background: radial-gradient(120% 140% at 92% 0%, #1863dc 0%, var(--navy) 46%, var(--night) 88%);
+    box-shadow: 0 30px 60px -34px rgba(0, 34, 71, .8); }
   .hero::before { content: ""; position: absolute; z-index: -1; right: -6%; bottom: -46%; width: 64%; height: 150%; border: 2px solid rgba(255,255,255,.16);
     transform: perspective(700px) rotateX(58deg) rotateZ(-8deg); transform-origin: bottom;
     background: linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,.16)) 50% 0 / 2px 100% no-repeat,
                 linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,.16)) 0 50% / 100% 2px no-repeat,
                 linear-gradient(rgba(255,255,255,.1), rgba(255,255,255,.1)) 0 25% / 100% 2px no-repeat,
                 linear-gradient(rgba(255,255,255,.1), rgba(255,255,255,.1)) 0 75% / 100% 2px no-repeat; }
-  .hero-ball { position: absolute; z-index: -1; right: 9%; top: 14%; width: clamp(90px, 16vw, 170px); aspect-ratio: 1; border-radius: 50%;
-    background: radial-gradient(circle at 34% 30%, #f6ff9a 0%, var(--ball) 45%, #a7b40f 100%); box-shadow: 0 30px 50px -10px rgba(0,0,0,.55), inset -10px -14px 24px rgba(0,0,0,.18);
+  .hero.con-foto { background: var(--night) var(--hero-img) center / cover no-repeat; }
+  .hero.con-foto::before { inset: 0; width: auto; height: auto; transform: none; border: 0;
+    background: linear-gradient(90deg, rgba(0,34,71,.9) 0%, rgba(0,34,71,.6) 50%, rgba(0,34,71,.15) 100%), linear-gradient(0deg, rgba(0,34,71,.85) 0%, transparent 50%); }
+  .hero.con-foto .hero-ball { display: none; }
+  .hero-ball { position: absolute; z-index: -1; right: 9%; top: 14%; width: clamp(90px, 15vw, 160px); aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, #f5f9b8 0%, var(--ball) 48%, #a9b236 100%); box-shadow: 0 30px 50px -10px rgba(0,0,0,.55), inset -10px -14px 24px rgba(0,0,0,.16);
     animation: bote 5s ease-in-out infinite; }
   .hero-ball::before, .hero-ball::after { content: ""; position: absolute; inset: 9%; border-radius: 50%; border: 3px solid rgba(255,255,255,.85); clip-path: inset(0 55% 0 0); }
   .hero-ball::after { clip-path: inset(0 0 0 55%); }
   @keyframes bote { 50% { transform: translateY(-14px) rotate(14deg); } }
-  .hero-in { display: grid; gap: 14px; padding: 52px clamp(22px, 5vw, 56px) 34px; max-width: 760px; }
-  .hero .eyebrow-pill { background: rgba(255,255,255,.1); color: var(--ball); border: 1px solid rgba(226,242,59,.3); }
-  .hero h1 { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; color: #fff;
-    font-size: clamp(3.2rem, 11vw, 7rem); line-height: .86; letter-spacing: .005em; }
-  .hero h1 span { display: block; }
-  .hero h1 em { display: block; color: var(--ball); font-style: italic; text-shadow: 0 6px 30px rgba(226,242,59,.25); }
-  .hero .hero-by { margin: 0; font-family: var(--display2); font-weight: 700; font-size: clamp(1.1rem, 2.4vw, 1.5rem); letter-spacing: .32em; text-transform: uppercase; color: rgba(255,255,255,.78); }
+  .hero-in { display: grid; gap: 14px; padding: 60px clamp(22px, 5vw, 60px) 36px; max-width: 760px; }
+  .hero .eyebrow-pill { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.25); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .hero .eyebrow-pill::before { background: var(--ball); }
+  .hero h1 { font-family: var(--display2); font-weight: 800; font-size: clamp(2.8rem, 8vw, 5.4rem); line-height: 1; letter-spacing: -.035em; color: #fff; text-transform: none; font-style: normal; }
+  .hero h1 span { display: inline; }
+  .hero h1 em { font-style: normal; color: #fff; padding: 0 .06em; background: linear-gradient(transparent 64%, rgba(220,229,105,.9) 64%, rgba(220,229,105,.9) 90%, transparent 90%); }
+  .hero .hero-by { margin: 0; font-family: var(--display2); font-weight: 700; font-size: clamp(.95rem, 2vw, 1.15rem); letter-spacing: .3em; text-transform: uppercase; color: var(--ball); }
   .hero .hero-by:empty { display: none; }
-  .hero .hero-lead { margin: 4px 0 0; color: rgba(255,255,255,.78); font-size: 1.05rem; max-width: 46ch; }
+  .hero .hero-lead { margin: 4px 0 0; color: rgba(255,255,255,.86); font-size: 1.08rem; max-width: 44ch; }
   .hero-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-  .b-ball { background: var(--ball); color: var(--ball-ink); font-weight: 800; box-shadow: 0 12px 30px -10px rgba(226,242,59,.65); }
-  .b-ball:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -10px rgba(226,242,59,.8); }
-  .hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); }
-  .hstat { padding: 18px clamp(16px, 4vw, 40px); display: grid; gap: 2px; border-left: 1px solid rgba(255,255,255,.1); }
+  .hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid rgba(255,255,255,.14); background: rgba(0,34,71,.45);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .hstat { padding: 18px clamp(16px, 4vw, 44px); display: grid; gap: 2px; border-left: 1px solid rgba(255,255,255,.12); }
   .hstat:first-child { border-left: 0; }
-  .hstat b { font-family: var(--display2); font-weight: 800; font-style: italic; font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1; color: #fff; }
-  .hstat span { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.6); }
-  .sec-title { display: flex; align-items: center; gap: 16px; margin: 40px 0 18px; scroll-margin-top: 90px; }
-  .sec-title h2 { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1; }
-  .sec-line { flex: 1; height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--ball), var(--accent) 40%, transparent); }
-  .tcard { border-radius: 22px; }
-  .tcard h3 { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; font-size: 1.75rem; line-height: .95; letter-spacing: .01em; }
-  .tdate { font-family: var(--display2); font-size: 1rem; font-weight: 700; letter-spacing: .06em; }
-  .cta { font-family: var(--display2); font-size: 1.1rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
-  .pgen strong { font-family: var(--display2); font-style: italic; text-transform: uppercase; font-size: 2.3rem; line-height: .92; }
+  .hstat b { font-family: var(--display2); font-weight: 800; font-size: clamp(1.8rem, 4.5vw, 2.5rem); line-height: 1.05; color: #fff; }
+  .hstat span { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+  .sec-title { display: flex; align-items: flex-end; gap: 16px; margin: 44px 0 18px; scroll-margin-top: 90px; }
+  .sec-title h2 { font-family: var(--display2); font-weight: 800; font-size: clamp(1.8rem, 4vw, 2.4rem); letter-spacing: -.025em; line-height: 1.1; padding: 0 .08em;
+    background: linear-gradient(transparent 66%, rgba(220,229,105,.95) 66%, rgba(220,229,105,.95) 92%, transparent 92%); color: var(--ink-strong); }
+  .sec-line { display: none; }
+  .tcard { border-radius: 18px; box-shadow: 0 14px 34px -22px rgba(0,34,71,.45); }
+  .tcard h3 { font-family: var(--display2); font-weight: 800; font-size: 1.35rem; letter-spacing: -.015em; line-height: 1.15; }
+  .tdate { font-weight: 600; letter-spacing: .05em; font-size: .78rem; color: var(--accent); }
+  .tcard .cta { background: var(--ball); color: var(--ball-ink); padding: 9px 16px; border-radius: 999px; font-weight: 700; font-size: .9rem; }
+  .pgen strong { font-family: var(--display2); font-weight: 800; font-size: 1.9rem; letter-spacing: -.02em; line-height: 1.05; }
   .pgen small { color: var(--ball); opacity: 1; }
-  .pg0 { background: radial-gradient(130% 120% at 90% 0%, #2a5bd8 0%, #12245a 45%, var(--night) 80%); }
-  .pg1 { background: radial-gradient(130% 120% at 90% 0%, #0f9f8f 0%, #0d3b52 45%, var(--night) 80%); }
-  .pg2 { background: radial-gradient(130% 120% at 90% 0%, #c0267a 0%, #43195a 45%, var(--night) 80%); }
-  .pg3 { background: radial-gradient(130% 120% at 90% 0%, #e0731a 0%, #5a2a1c 45%, var(--night) 80%); }
-  .pgen::after { background: radial-gradient(circle at 34% 30%, #f6ff9a, var(--ball) 50%, #a7b40f); }
-  .filtro[aria-pressed="true"] { background: var(--night); border-color: var(--night); color: #fff; }
-  .thero { border-radius: 26px; }
-  .thero::after { background: linear-gradient(180deg, rgba(10,17,34,.25), rgba(10,17,34,.9)); }
-  .thero h1 { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; font-size: clamp(2.6rem, 8vw, 5rem); line-height: .9; }
-  .kpi b { font-family: var(--display2); font-style: italic; font-size: 1.9rem; }
-  .tab { font-family: var(--display2); font-size: 1.12rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
-  .tab[aria-selected="true"] { background: var(--night); color: #fff; }
+  .pg0 { background: radial-gradient(130% 120% at 90% 0%, #1863dc 0%, var(--navy) 50%, var(--night) 90%); }
+  .pg1 { background: radial-gradient(130% 120% at 90% 0%, #0e8f86 0%, #0b3d5c 50%, var(--night) 90%); }
+  .pg2 { background: radial-gradient(130% 120% at 90% 0%, #4c5fd6 0%, #1d2a6e 50%, var(--night) 90%); }
+  .pg3 { background: radial-gradient(130% 120% at 90% 0%, #29554d 0%, #12352f 50%, var(--night) 90%); }
+  .pgen::after { background: radial-gradient(circle at 34% 30%, #f5f9b8, var(--ball) 50%, #a9b236); }
+  .filtro { border-radius: 999px; }
+  .filtro[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .thero { border-radius: 24px; }
+  .thero::after { background: linear-gradient(180deg, rgba(0,34,71,.2), rgba(0,34,71,.9)); }
+  .thero h1 { font-family: var(--display2); font-weight: 800; font-size: clamp(2.2rem, 6vw, 4rem); line-height: 1.02; letter-spacing: -.03em; }
+  .kpi { border-radius: 14px; }
+  .kpi b { font-family: var(--display2); font-weight: 800; font-size: 1.6rem; }
+  .tabs-in { border-radius: 999px; }
+  .tab { border-radius: 999px; font-weight: 600; }
+  .tab[aria-selected="true"] { background: var(--navy); color: #fff; }
   .tab.admin-tab[aria-selected="true"] { background: var(--warn); color: #fff; }
-  .card h2, .panel > h2, .gcard h3, .day h2, .ok-box h2, .modal h2 { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; letter-spacing: .01em; }
-  .card h2 { font-size: 1.55rem; line-height: 1; }
-  .day h2 { font-size: 1.5rem; }
-  .day h2 span { font-family: var(--font); font-style: normal; text-transform: none; font-weight: 500; }
-  .ctitle { font-family: var(--display2); font-style: italic; }
-  .pie { padding-block: 40px 12px; }
-  .pie-in { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 26px 30px; border-radius: 24px;
-    color: #fff; background: radial-gradient(120% 200% at 100% 0%, #16306f 0%, var(--night) 60%); }
-  .pie-club { display: block; font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; font-size: 1.9rem; line-height: 1; }
-  .pie-by { font-family: var(--display2); font-weight: 700; letter-spacing: .3em; text-transform: uppercase; color: var(--ball); font-size: .95rem; }
-  .pie .link { color: rgba(255,255,255,.7); }
+  .card h2, .panel > h2, .gcard h3, .day h2, .ok-box h2, .modal h2 { font-family: var(--display2); font-weight: 800; letter-spacing: -.015em; text-transform: none; font-style: normal; }
+  .card h2 { font-size: 1.3rem; }
+  .panel > h2 { font-size: 1.2rem !important; text-transform: none !important; }
+  .day h2 { font-size: 1.2rem; }
+  .day h2 span { font-family: var(--font); font-weight: 500; }
+  .ctitle { font-family: var(--display2); font-weight: 800; }
+  .pie { padding-block: 44px 14px; }
+  .pie-in { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 26px; align-items: start; padding: 34px clamp(20px, 4vw, 40px);
+    border-radius: 24px; color: #fff; background: var(--navy); }
+  .pie-marca { display: grid; gap: 12px; justify-items: start; }
+  .pie-logo img { max-height: 70px; max-width: 220px; object-fit: contain; }
+  .pie-logo:empty { display: none; }
+  .pie-club { display: block; font-family: var(--display2); font-weight: 800; font-size: 1.6rem; letter-spacing: -.02em; line-height: 1.1; }
+  .pie-by { font-family: var(--display2); font-weight: 700; letter-spacing: .28em; text-transform: uppercase; color: var(--ball); font-size: .85rem; }
+  .pie-contacto { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+  .pie-contacto:empty { display: none; }
+  .pcard { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+    color: #fff; text-decoration: none; min-width: 0; transition: background-color .3s ease; }
+  .pcard:hover { background: rgba(255,255,255,.14); }
+  .pcard i { flex: none; width: 36px; height: 36px; border-radius: 50%; background: #fff; color: var(--navy); display: grid; place-items: center; font-style: normal; }
+  .pcard span { min-width: 0; }
+  .pcard small { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+  .pcard b { font-weight: 600; overflow-wrap: anywhere; }
+  .pie .link { color: rgba(255,255,255,.75); }
   .pie .link:hover { color: #fff; }
-  @media (max-width: 560px) { .hero-in { padding-top: 38px; } .hstat span { font-size: 10.5px; letter-spacing: .04em; } .hero-ball { right: -6%; top: 6%; opacity: .9; } }
+  .club-img { aspect-ratio: 16 / 7; border-radius: 14px; overflow: hidden; background: var(--surface-2); display: grid; place-items: center; color: var(--muted); font-size: 13px; text-align: center; padding: 0; max-width: 100%; }
+  .club-img img { width: 100%; height: 100%; object-fit: cover; }
+  .club-img.logo-prev { aspect-ratio: 16 / 7; background: var(--navy); }
+  .club-img.logo-prev img { object-fit: contain; padding: 14px; }
+  @media (max-width: 760px) { .pie-in { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) { .hero { min-height: 0; } .hero-in { padding-top: 40px; } .hstat span { font-size: 10.5px; letter-spacing: .03em; } .hero-ball { right: -6%; top: 6%; } }
   /* filtros de categoría */
   .gfil{gap:8px}
   .gfil .chip{border:2px solid transparent;cursor:pointer;padding:6px 12px;font-size:.85rem;font-family:var(--font);opacity:.5;transition:all .3s ease}
@@ -640,7 +677,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   <div class="wrap">
     <div class="nav-inner">
       <button type="button" class="brand" data-go="home" aria-label="Ir a la portada">
-        <span class="logo" aria-hidden="true">
+        <span class="logo" id="logo" aria-hidden="true">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6c3.2 3.2 3.2 9.6 0 12.8M18.4 5.6c-3.2 3.2-3.2 9.6 0 12.8"/></svg>
         </span>
         <span id="club">Club de Pádel</span>
@@ -673,12 +710,13 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
       <span aria-hidden="true">ℹ︎</span>
       <span>Vista de ejemplo con torneos y parejas inventados. Las inscripciones no se guardan. Para probar el modo organizador entra con cualquier correo y la contraseña <b>1234</b>.</span>
     </div>
-    <div class="tabs-in homeseg" id="homeseg" role="tablist" hidden><button type="button" class="tab" data-hv="torneos">Torneos</button><button type="button" class="tab admin-tab" data-hv="fotos">Fotos</button></div>
+    <div class="tabs-in homeseg" id="homeseg" role="tablist" hidden><button type="button" class="tab" data-hv="torneos">Torneos</button><button type="button" class="tab admin-tab" data-hv="fotos">Fotos</button><button type="button" class="tab admin-tab" data-hv="club">Club</button></div>
     <div class="filtros" id="filtros" role="group" aria-label="Filtrar torneos"></div>
     <div class="tgrid" id="tgrid" aria-live="polite">
       <div class="esq" style="height:400px"></div><div class="esq" style="height:400px"></div><div class="esq" style="height:400px"></div>
     </div>
     <section class="sec" id="fotos" hidden></section>
+    <section class="sec" id="club-cfg" hidden></section>
   </section>
 
   <!-- Torneo -->
@@ -702,8 +740,9 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
 
   <footer class="pie">
     <div class="pie-in">
-      <div><b class="pie-club" id="pie-club">Padel Mes Malgrat</b><span class="pie-by" id="pie-by"></span></div>
-      <button type="button" class="link" id="acceso">Acceso organizador</button>
+      <div class="pie-marca"><div class="pie-logo" id="pie-logo"></div><div><b class="pie-club" id="pie-club">Padel Mes Malgrat</b><span class="pie-by" id="pie-by"></span></div>
+        <button type="button" class="link" id="acceso">Acceso organizador</button></div>
+      <div class="pie-contacto" id="pie-contacto"></div>
     </div>
   </footer>
 </main>
@@ -2129,10 +2168,13 @@ const API = {
   },
   fotosSubir: async a => { ok(await SB.storage.from("fotos").upload(a.path, a.blob, {contentType: "image/jpeg", upsert: false})); return true; },
   fotosBorrar: async path => { ok(await SB.storage.from("fotos").remove([path])); return true; },
+  getAjustes: async () => { const r = await SB.from("ajustes").select("datos").eq("id", "club").maybeSingle(); return r.error ? {} : ((r.data && r.data.datos) || {}); },
+  adminGuardarAjustes: async datos => { ok(await SB.from("ajustes").upsert({id: "club", datos, actualizado: new Date().toISOString()})); return {ok: true}; },
 };
 const msgErr = e => (e && e.message ? String(e.message).replace(/^Error:\s*/, "").replace(/^Exception:\s*/, "") : "Algo ha fallado. Inténtalo de nuevo.");
 
 const fotosDemo = {};
+let ajustesDemo = {email: "info@padelmesmalgrat.cat", telefono: "600 000 000", direccion: "Malgrat de Mar", instagram: "padelmesmalgrat"};
 const DEMO = (() => {
   const ts = [
     {id: "open-octubre", nombre: "Open de Octubre", fechas: "22–25 octubre 2026", lugar: "Pistas 1–3", precio: "18 € / jugador", plazas: 32, estado: "juego", descripcion: "Liguilla por grupos de jueves a sábado y fases finales el domingo por la mañana.", cartel: ""},
@@ -2190,6 +2232,8 @@ const DEMO = (() => {
     adminOrden: list => { list.forEach(x => { const t = ts.find(y => y.id === x.id); if(t) t.orden = x.orden; }); ts.sort((a, b) => (a.orden || 0) - (b.orden || 0)); return {ok: true}; },
     fotosListar: album => fotosDemo[album] || [],
     fotosBorrar: path => { for(const k in fotosDemo) fotosDemo[k] = fotosDemo[k].filter(f => f.path !== path); return true; },
+    getAjustes: () => ajustesDemo,
+    adminGuardarAjustes: datos => { ajustesDemo = datos; return {ok: true}; },
   };
 })();
 
@@ -2244,11 +2288,13 @@ function renderHome(){
   renderHeroStats();
   $("#homeseg").hidden = !ADMIN; if(!ADMIN) homeVista = "torneos";
   document.querySelectorAll("#homeseg .tab").forEach(b => b.setAttribute("aria-selected", b.dataset.hv === homeVista));
-  const vf = homeVista === "fotos";
-  $("#filtros").hidden = vf; $("#tgrid").hidden = vf; $("#fotos").hidden = !vf;
+  const vf = homeVista === "fotos", vc = homeVista === "club";
+  $("#filtros").hidden = vf || vc; $("#tgrid").hidden = vf || vc; $("#fotos").hidden = !vf; $("#club-cfg").hidden = !vc;
+  $("#lista-torneos h2").textContent = vf ? "Fotos" : vc ? "Club" : "Torneos";
   if(sortable){ sortable.destroy(); sortable = null; }
   $("#tgrid").classList.remove("ordenable");
   if(vf){ renderFotos(); return; }
+  if(vc){ renderClubCfg(); return; }
   const cuenta = k => k === "todos" ? torneos.length : torneos.filter(t => k === "abierta" ? t.estado === "abierta" : t.estado === k).length;
   const fs = [["todos", "Todos"], ["abierta", "Inscripción abierta"], ["juego", "En juego"], ["finalizado", "Finalizados"]].concat(ADMIN ? [["cerrada", "Inscripción cerrada"], ["oculto", "Ocultos"]] : []).filter(([k]) => k === "todos" || cuenta(k));
   if(!fs.some(f => f[0] === homeFiltro)) homeFiltro = "todos";
@@ -2284,6 +2330,49 @@ async function guardarOrden(){
   ids.forEach((id, i) => { const t = torneos.find(x => x.id === id); if(t && t.orden !== i * 10){ t.orden = i * 10; cambios.push({id, orden: t.orden}); } });
   if(!cambios.length) return;
   try{ await llamar("adminOrden", cambios); toast("Orden guardado"); }catch(e){ toast("No se ha guardado el orden: " + msgErr(e)); }
+}
+
+/* ---------- imagen y datos del club ---------- */
+let CLUBA = {}, LOGO_SVG = "";
+const IC = {
+  mail: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
+  tel: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
+  ig: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>',
+};
+const igUser = v => String(v || "").trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/\/.*$/, "");
+function aplicarClub(){
+  const h = document.querySelector(".hero");
+  h.classList.toggle("con-foto", !!CLUBA.portada);
+  h.style.setProperty("--hero-img", CLUBA.portada ? `url("${encodeURI(CLUBA.portada)}")` : "none");
+  const lg = $("#logo"); lg.classList.toggle("con-img", !!CLUBA.logo);
+  lg.innerHTML = CLUBA.logo ? `<img src="${esc(CLUBA.logo)}" alt="">` : LOGO_SVG;
+  $("#pie-logo").innerHTML = CLUBA.logo ? `<img src="${esc(CLUBA.logo)}" alt="Logo de ${esc(CLUB)}">` : "";
+  const c = [];
+  if(CLUBA.email) c.push(`<a class="pcard" href="mailto:${esc(CLUBA.email)}"><i>${IC.mail}</i><span><small>Correo</small><b>${esc(CLUBA.email)}</b></span></a>`);
+  if(CLUBA.telefono) c.push(`<a class="pcard" href="tel:${esc(CLUBA.telefono.replace(/\s+/g, ""))}"><i>${IC.tel}</i><span><small>Teléfono</small><b>${esc(CLUBA.telefono)}</b></span></a>`);
+  if(CLUBA.direccion) c.push(`<a class="pcard" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(CLUBA.direccion)}" target="_blank" rel="noopener"><i>${ICON.pin}</i><span><small>Dónde estamos</small><b>${esc(CLUBA.direccion)}</b></span></a>`);
+  if(igUser(CLUBA.instagram)) c.push(`<a class="pcard" href="https://www.instagram.com/${encodeURIComponent(igUser(CLUBA.instagram))}/" target="_blank" rel="noopener"><i>${IC.ig}</i><span><small>Instagram</small><b>@${esc(igUser(CLUBA.instagram))}</b></span></a>`);
+  $("#pie-contacto").innerHTML = c.join("");
+}
+async function cargarClub(){ try{ CLUBA = await llamar("getAjustes") || {}; }catch(e){ CLUBA = {}; } aplicarClub(); }
+async function guardarClub(cambios){
+  const nuevo = {...CLUBA, ...cambios};
+  try{ await llamar("adminGuardarAjustes", nuevo); CLUBA = nuevo; aplicarClub(); return true; }
+  catch(e){ toast("No se ha guardado: " + (/ajustes/i.test(msgErr(e)) ? "falta actualizar la base de datos (vuelve a ejecutar schema.sql en Supabase)." : msgErr(e))); return false; }
+}
+function renderClubCfg(){
+  const campo = (k, l, ph, type = "text") => `<div class="campo"><label for="cl-${k}">${l}</label><input class="in cl" type="${type}" id="cl-${k}" data-k="${k}" value="${esc(CLUBA[k] || "")}" placeholder="${esc(ph)}"></div>`;
+  $("#club-cfg").innerHTML = `<div class="card"><div><h2>Imagen del club</h2><p class="lead">La foto de portada sale en la cabecera de la web y el logo en el menú y en el pie. Mejor una foto horizontal de las pistas.</p></div>
+    <div class="grid-2">
+      <div class="campo"><span class="etq">Foto de portada</span><div class="club-img">${CLUBA.portada ? `<img src="${esc(CLUBA.portada)}" alt="Foto de portada">` : "Sin foto: se usa el fondo azul con la pista y la pelota"}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="b b-soft" for="club-portada" style="cursor:pointer">Subir foto</label><input type="file" id="club-portada" accept="image/*" hidden>${CLUBA.portada ? `<button type="button" class="b b-ghost" data-act="club-quitar" data-k="portada">Quitar</button>` : ""}</div></div>
+      <div class="campo"><span class="etq">Logo</span><div class="club-img logo-prev">${CLUBA.logo ? `<img src="${esc(CLUBA.logo)}" alt="Logo">` : `<span style="color:rgba(255,255,255,.7)">Sin logo</span>`}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="b b-soft" for="club-logo" style="cursor:pointer">Subir logo</label><input type="file" id="club-logo" accept="image/*" hidden>${CLUBA.logo ? `<button type="button" class="b b-ghost" data-act="club-quitar" data-k="logo">Quitar</button>` : ""}</div>
+        <span class="lead small">Mejor PNG con fondo transparente.</span></div>
+    </div></div>
+    <div class="card"><div><h2>Contacto</h2><p class="lead">Sale en el pie de la web. Deja vacío lo que no quieras mostrar.</p></div>
+      <div class="grid-2">${campo("email", "Correo", "info@tuclub.com", "email")}${campo("telefono", "Teléfono", "600 000 000", "tel")}${campo("direccion", "Dirección", "Calle, número, Malgrat de Mar")}${campo("instagram", "Instagram", "@padelmesmalgrat")}</div>
+      <div><button type="button" class="b b-primary" data-act="club-guardar">Guardar contacto</button></div></div>`;
 }
 
 /* ---------- fotos (organizador) ---------- */
@@ -2798,6 +2887,11 @@ document.addEventListener("click", async e => {
   const b = e.target.closest("[data-act]"); if(!b) return;
   const act = b.dataset.act;
   if(act === "reload") cargarTorneos();
+  else if(act === "club-guardar" && ADMIN){
+    const cambios = {}; document.querySelectorAll("#club-cfg .cl").forEach(el => { cambios[el.dataset.k] = el.value.trim(); });
+    b.disabled = true; if(await guardarClub(cambios)) toast("Datos del club guardados"); b.disabled = false;
+  }
+  else if(act === "club-quitar" && ADMIN){ if(await guardarClub({[b.dataset.k]: ""})){ renderClubCfg(); toast("Imagen quitada"); } }
   else if(act === "ir-torneos") $("#lista-torneos").scrollIntoView({behavior: "smooth", block: "start"});
   else if(act === "ins-todo" || act === "ins-nada") document.querySelectorAll(`#insgrid .c[data-d="${b.dataset.d}"]`).forEach(c => c.classList.toggle("on", act === "ins-todo"));
   else if(act === "gsel"){ const k = b.dataset.g; if(!k) gsel.clear(); else if(gsel.has(k)) gsel.delete(k); else gsel.add(k); abrirDiasDelFiltro(); renderAll(); }
@@ -2936,6 +3030,17 @@ async function onDatesChanged(){
 document.addEventListener("change", async e => {
   if(e.target.name === "i-cat"){ $("#niv-box").innerHTML = nivelesHTML(e.target.value); return; }
   if(e.target.id === "tf-date-from" || e.target.id === "tf-date-to"){ if(ADMIN) cambiarFechas(e.target.id === "tf-date-from" ? "from" : "to", e.target.value); return; }
+  if((e.target.id === "club-portada" || e.target.id === "club-logo") && ADMIN){
+    const f = e.target.files && e.target.files[0]; e.target.value = ""; if(!f) return;
+    const k = e.target.id === "club-portada" ? "portada" : "logo";
+    toast("Subiendo imagen…");
+    try{
+      const archivo = k === "portada" ? new File([await comprimir(f)], "portada.jpg", {type: "image/jpeg"}) : f;
+      const url = await subirCartel(archivo);
+      if(await guardarClub({[k]: url})){ renderClubCfg(); toast(k === "portada" ? "Foto de portada guardada" : "Logo guardado"); }
+    }catch(err){ toast("No se ha podido subir: " + msgErr(err)); }
+    return;
+  }
   if(e.target.id === "foto-album"){ fotosAlbum = e.target.value; cargarFotos(); return; }
   if(e.target.id === "foto-file" && ADMIN){ const fs = [...(e.target.files || [])]; e.target.value = ""; if(fs.length) subirFotos(fs); return; }
   if(e.target.closest && e.target.closest("#pack-box") && ADMIN){
@@ -2972,6 +3077,7 @@ document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#modal-
 /* ---------- arranque ---------- */
 (async function boot(){
   $("#club").textContent = CLUB;
+  LOGO_SVG = $("#logo").innerHTML;
   const pal = CLUB.trim().split(/\s+/), ult = pal.length > 1 ? pal.pop() : "";
   $("#hero-title").innerHTML = `<span>${esc(pal.join(" "))}</span>${ult ? ` <em>${esc(ult)}</em>` : ""}`;
   $("#hero-by").textContent = APP.tagline || ""; $("#pie-by").textContent = APP.tagline || ""; $("#pie-club").textContent = CLUB;
@@ -2980,6 +3086,7 @@ document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#modal-
   if(!LIVE) $("#demo").hidden = false;
   try{ if(await llamar("adminSesion")) ADMIN = true; }catch(e){}
   marcarAdmin();
+  cargarClub();
   await cargarTorneos();
   if(INICIAL && torneos.some(t => t.id === INICIAL)) abrirTorneo(INICIAL);
 })();
