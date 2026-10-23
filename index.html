@@ -532,8 +532,8 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   .hero-ball { position: absolute; z-index: -1; right: 9%; top: 14%; width: clamp(90px, 15vw, 160px); aspect-ratio: 1; border-radius: 50%;
     background: radial-gradient(circle at 34% 30%, #f5f9b8 0%, var(--ball) 48%, #a9b236 100%); box-shadow: 0 30px 50px -10px rgba(0,0,0,.55), inset -10px -14px 24px rgba(0,0,0,.16);
     animation: bote 5s ease-in-out infinite; }
-  .hero-ball::before, .hero-ball::after { content: ""; position: absolute; inset: 9%; border-radius: 50%; border: 3px solid rgba(255,255,255,.85); clip-path: inset(0 55% 0 0); }
-  .hero-ball::after { clip-path: inset(0 0 0 55%); }
+  .hero-ball svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero-ball path { fill: none; stroke: rgba(255,255,255,.92); stroke-width: 4.5; stroke-linecap: round; filter: drop-shadow(0 0 1.5px rgba(0,0,0,.15)); }
   @keyframes bote { 50% { transform: translateY(-14px) rotate(14deg); } }
   .hero-in { display: grid; gap: 14px; padding: 60px clamp(22px, 5vw, 60px) 36px; max-width: 760px; }
   .hero .eyebrow-pill { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.25); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
@@ -704,7 +704,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   <!-- Portada -->
   <section id="home">
     <div class="hero">
-      <div class="hero-ball" aria-hidden="true"></div>
+      <div class="hero-ball" aria-hidden="true"><svg viewBox="0 0 100 100"><defs><clipPath id="bola-clip"><circle cx="50" cy="50" r="50"/></clipPath></defs><g clip-path="url(#bola-clip)"><path d="M14 -2 C 46 22, 46 78, 14 102"/><path d="M86 -2 C 54 22, 54 78, 86 102"/></g></svg></div>
       <div class="hero-in">
         <span class="eyebrow-pill" id="hero-eyebrow">Torneos del club</span>
         <h1 id="hero-title"><span>Padel Mes</span> <em>Malgrat</em></h1>
@@ -3051,6 +3051,19 @@ document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#modal-
 (async function boot(){
   $("#club").textContent = CLUB;
   LOGO_SVG = $("#logo").innerHTML;
+  const bola = document.querySelector(".hero-ball");
+  if(bola && !matchMedia("(prefers-reduced-motion: reduce)").matches){
+    let pend = 0;
+    window.addEventListener("scroll", () => {
+      if(pend) return;
+      pend = requestAnimationFrame(() => {
+        pend = 0;
+        const y = Math.min(window.scrollY, 1200);
+        bola.style.translate = `0 ${Math.round(y * 1.7)}px`;
+        bola.style.rotate = `${Math.round(y * 0.8)}deg`;
+      });
+    }, {passive: true});
+  }
   const pal = CLUB.trim().split(/\s+/), ult = pal.length > 1 ? pal.pop() : "";
   $("#hero-title").innerHTML = `<span>${esc(pal.join(" "))}</span>${ult ? ` <em>${esc(ult)}</em>` : ""}`;
   $("#hero-by").textContent = APP.tagline || ""; $("#pie-by").textContent = APP.tagline || ""; $("#pie-club").textContent = CLUB;
