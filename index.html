@@ -388,6 +388,24 @@ table.grid td.time small{display:block;font-family:var(--body);font-size:.72rem;
 .uitem{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer;text-align:left;width:100%}
 .uitem.sel{outline:3px solid var(--ball)}
 .uitem .why{color:var(--warn);font-size:.82rem;margin-left:auto}
+.uitem .dg-ver{font-size:.78rem;font-weight:700;color:var(--accent)}
+.diag{display:flex;flex-direction:column;gap:8px;padding:12px 14px;margin:-2px 0 6px;border:1px solid var(--line);border-left:3px solid var(--ball);border-radius:6px;background:var(--surface)}
+.diag p{margin:0}
+.dg-dias{display:flex;flex-direction:column;gap:10px}
+.dg-day{display:grid;grid-template-columns:minmax(90px,max-content) auto 1fr;gap:3px 10px;align-items:center;font-size:.8rem}
+.dg-day > b{grid-column:1/-1;font-size:.85rem}
+.dg-n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.dg-t{color:var(--muted)}
+.dg-bar{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.dg-bar i{display:block;width:7px;height:12px;background:var(--bg);border-right:1px solid var(--line)}
+.dg-bar i:last-child{border-right:0}
+.dg-bar i.on{background:var(--court)}
+.dg-bar.dg-com i.ok{background:var(--ball)}
+.dg-ul{margin:0;padding-left:18px;font-size:.85rem}
+.dg-ops{display:flex;flex-direction:column;gap:6px}
+.dg-op{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 10px;border-radius:6px;background:var(--bg);font-size:.88rem}
+.dg-op span{flex:1;min-width:220px}
+@media (max-width:560px){ .dg-day{grid-template-columns:auto 1fr} .dg-t{grid-column:1/-1;margin-bottom:2px} .dg-bar i{width:5px} }
 
 /* cross tables */
 .cuadro{display:flex;flex-direction:column;gap:12px}
@@ -1017,6 +1035,11 @@ document.addEventListener("toggle", e => {
   if(el.id === "fold-ins") insAbierto = el.open;
 }, true);
 let insAbierto = false;
+document.addEventListener("click", e => {
+  const b = e.target.closest(".fold-cerrar"); if(!b) return;
+  const d = b.closest("details"); d.open = false;
+  d.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"});
+});
 let state, tab = "horario", selected = null, filter = "", editing = null, focusPair = "", importPreview = null;
 let db = null, downloads = null, saveTimer = null, writing = false, pendingWrite = false, touched = false;
 /* ---------- groups, pairs, slots ---------- */
@@ -1088,8 +1111,14 @@ function allMatches(){
 /* ---------- scheduler ---------- */
 function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed>>>15, 1|seed); t = t + Math.imul(t ^ t>>>7, 61|t) ^ t; return ((t ^ t>>>14) >>> 0) / 4294967296; }; }
 
-function generate(){ ensureSubs(); state.schedule = solve(); return state.schedule; }
-function solve(itersOverride){
+function generate(){
+  ensureSubs(); state.schedule = solve();
+  if(state.finalsPos) for(const k in state.finalsPos) if(!state.finalsPos[k].m) delete state.finalsPos[k];
+  return state.schedule;
+}
+/* opts.desde: parte de ese horario (respeta lo colocado); opts.chainMs: tiempo para cadenas de movimientos;
+   opts.soloDesde: no prueba horarios nuevos, solo intenta meter lo que falta en el actual */
+function solve(itersOverride, opts = {}){
   const cfg = state.config, slots = buildSlots(cfg), A = availSets();
   const matches = allMatches(), byId = Object.fromEntries(matches.map(m => [m.id, m]));
   const feas = {};
@@ -1121,11 +1150,94 @@ function solve(itersOverride){
   function place(ctx, m, si, c){
     ctx.court[si][c] = m.id; ctx.pos[m.id] = {s: si, c};
     (ctx.busy[m.a] ||= []).push(m.id); (ctx.busy[m.b] ||= []).push(m.id);
+    if(ctx.log) ctx.log.push([1, m, si, c]);
   }
   function unplace(ctx, m){
     const p = ctx.pos[m.id]; if(!p) return;
     ctx.court[p.s][p.c] = null; delete ctx.pos[m.id];
     ctx.busy[m.a] = ctx.busy[m.a].filter(x => x !== m.id); ctx.busy[m.b] = ctx.busy[m.b].filter(x => x !== m.id);
+    if(ctx.log) ctx.log.push([0, m, p.s, p.c]);
+  }
+  function undoTo(ctx, mark){
+    const log = ctx.log; ctx.log = null;
+    while(log.length > mark){ const [k, m, si, c] = log.pop(); if(k) unplace(ctx, m); else place(ctx, m, si, c); }
+    ctx.log = log;
+  }
+  /* qué partidos hay que sacar (máx. 3, nunca fijados) para que m quepa en la franja si */
+  function aSacar(ctx, m, si){
+    const s = slots[si], must = new Set(), choices = [];
+    for(const pid of [m.a, m.b]){
+      const same = (ctx.busy[pid] || []).filter(x => slots[ctx.pos[x].s].day === s.day);
+      const conf = same.filter(x => { const o = slots[ctx.pos[x].s]; if(o.i === si) return true; return (o.start < s.start ? s.start - o.end : o.start - s.end) < cfg.minRest; });
+      conf.forEach(x => must.add(x));
+      const rest = same.filter(x => !must.has(x));
+      if(rest.length >= maxDay) choices.push(rest);
+    }
+    const occ = ctx.court[si].filter(Boolean);
+    if(occ.length >= nC && !occ.some(x => must.has(x))) choices.push(occ);
+    if([...must].some(x => ctx.pinned.has(x))) return [];
+    let sets = [[...must]];
+    for(const ch of choices){
+      const nxt = [];
+      for(const set of sets){ if(ch.some(x => set.includes(x))){ nxt.push(set); continue; } ch.forEach(x => { if(!ctx.pinned.has(x)) nxt.push([...set, x]); }); }
+      sets = nxt;
+    }
+    const seen = new Set();
+    return sets.filter(st => st.length && st.length <= 3 && !seen.has(st.slice().sort().join()) && seen.add(st.slice().sort().join())).sort((x, y) => x.length - y.length);
+  }
+  /* mete m; si no cabe, saca lo que estorba y lo recoloca (cadena de hasta «depth» niveles). Si falla, deshace todo */
+  function meter(ctx, m, depth, tabu, deadline, r){
+    const ord = feas[m.id].map(si => [si, cost(ctx, m, si) + r() * 2]).sort((x, y) => x[1] - y[1]).map(x => x[0]);
+    for(const si of ord){ const c = courtFor(ctx, m, si); if(c >= 0){ place(ctx, m, si, c); return true; } }
+    if(depth <= 0) return false;
+    for(const si of ord){
+      if(Date.now() > deadline) return false;
+      for(const set of aSacar(ctx, m, si)){
+        if(set.some(x => tabu.has(x))) continue;
+        const mark = ctx.log.length;
+        set.forEach(x => unplace(ctx, byId[x]));
+        const c = courtFor(ctx, m, si);
+        if(c >= 0){
+          place(ctx, m, si, c); set.forEach(x => tabu.add(x));
+          const ok = set.every(x => meter(ctx, byId[x], depth - 1, tabu, deadline, r));
+          set.forEach(x => tabu.delete(x));
+          if(ok) return true;
+        }
+        undoTo(ctx, mark);
+      }
+    }
+    return false;
+  }
+  function cadenas(ctx, left, deadline, r){
+    let pend = left.slice().sort((x, y) => feas[x.id].length - feas[y.id].length), progreso = true;
+    while(progreso && pend.length && Date.now() < deadline){
+      progreso = false; const quedan = [];
+      for(const [i, m] of pend.entries()){
+        let ok = false;
+        const tope = Math.min(deadline, Date.now() + Math.max(120, (deadline - Date.now()) * 2 / (pend.length - i)));
+        if(feas[m.id].length) for(const d of [1, 2, 3]){
+          if(Date.now() > tope) break;
+          ctx.log = [];
+          if(meter(ctx, m, d, new Set([m.id]), tope, r)){ ok = true; break; }
+          undoTo(ctx, 0);
+        }
+        ctx.log = null;
+        if(ok) progreso = true; else quedan.push(m);
+      }
+      pend = quedan;
+    }
+    return pend;
+  }
+  /* el horario actual como punto de partida */
+  function desdeActual(){
+    const ctx = newCtx(), prev = (opts.desde && opts.desde.matches) || [];
+    prev.slice().sort((x, y) => (y.pinned ? 1 : 0) - (x.pinned ? 1 : 0)).forEach(p => {
+      const m = byId[p.id], si = slotIdx[p.day + "@" + p.start];
+      if(!m || si == null || p.court >= nC || ctx.court[si][p.court]) return;
+      if(!p.pinned && (!feas[m.id].includes(si) || !pairOk(ctx, m.a, si) || !pairOk(ctx, m.b, si))) return;
+      place(ctx, m, si, p.court); if(p.pinned) ctx.pinned.add(p.id);
+    });
+    return {ctx, left: matches.filter(m => !ctx.pos[m.id])};
   }
   function cost(ctx, m, si){
     const s = slots[si]; let c = 0;
@@ -1146,7 +1258,7 @@ function solve(itersOverride){
   }
 
   let best = null;
-  const iters = itersOverride || Math.max(40, Math.min(300, Math.round(30000 / (matches.length + 1))));
+  const iters = opts.soloDesde ? 0 : itersOverride || Math.max(40, Math.min(300, Math.round(30000 / (matches.length + 1))));
   for(let it = 0; it < iters; it++){
     const r = rng(it * 7919 + 13), ctx = newCtx();
     for(const p of pinnedPrev){
@@ -1197,6 +1309,19 @@ function solve(itersOverride){
     if(!best || score < best.score) best = {score, ctx, left};
     if(best.score === 0) break;
   }
+  /* cadenas de movimientos para lo que ha quedado fuera, sobre el mejor horario y (si se pide) sobre el actual */
+  const cands = best ? [best] : [];
+  if(opts.desde) cands.unshift({...desdeActual(), desde: true});
+  const budget = opts.chainMs ?? 800, t0 = Date.now(), rr = rng(97);
+  cands.forEach((c, i) => {
+    if(c.left.length && budget > 0){
+      const objetivo = opts.solo ? c.left.filter(m => m.id === opts.solo) : c.left;
+      const resto = cadenas(c.ctx, objetivo, t0 + budget * (i + 1) / cands.length, rr);
+      c.left = opts.solo ? c.left.filter(m => m.id !== opts.solo).concat(resto) : resto;
+    }
+    c.score = c.left.length * 1000 + penalty(c.ctx);
+  });
+  best = cands.reduce((a, c) => (c.left.length < a.left.length || (c.left.length === a.left.length && !a.desde && c.score < a.score)) ? c : a);
 
   const ctx = best.ctx;
   return {
@@ -1263,22 +1388,26 @@ function finalsPlan(){
   const gOrd = m => { const g = groupOf(m.g); return lvl[g.level] * 10 + cfg.categories.indexOf(g.cat); };
   const take = (m, cell) => { used.add(cell.ti + ":" + cell.c); pos[m.id] = cell; };
   const free = cell => !used.has(cell.ti + ":" + cell.c);
-  ms.filter(m => m.kind === "qf").sort((x,y) => gOrd(x) - gOrd(y)).forEach(m => { const cell = cells.find(free); if(cell) take(m, cell); });
-  const semis = ms.filter(m => m.kind === "sf").sort((x,y) => gOrd(x) - gOrd(y));
+  /* partidos colocados a mano: se respetan si su celda sigue existiendo */
+  const fijos = state.finalsPos || {};
+  ms.forEach(m => { const f = fijos[m.id]; if(!f) return; const cell = cells.find(c => times[c.ti] === f.start && c.c === f.court); if(cell && free(cell)) take(m, cell); });
+  const auto = m => !pos[m.id];
+  ms.filter(m => m.kind === "qf" && auto(m)).sort((x,y) => gOrd(x) - gOrd(y)).forEach(m => { const cell = cells.find(free); if(cell) take(m, cell); });
+  const semis = ms.filter(m => m.kind === "sf" && auto(m)).sort((x,y) => gOrd(x) - gOrd(y));
   semis.forEach(m => {
     const minTi = m.after ? Math.max(...m.after.map(id => pos[id] ? pos[id].ti : -1)) : -1;
     const cell = cells.find(c => free(c) && c.ti > minTi) || cells.find(free);
     if(cell) take(m, cell);
   });
   const endOf = m => Math.max(...m.after.map(id => pos[id] ? pos[id].ti : 99));
-  ms.filter(m => m.kind === "f" && m.after).sort((x,y) => endOf(y) - endOf(x) || gOrd(y) - gOrd(x)).forEach(m => {
+  ms.filter(m => m.kind === "f" && m.after && auto(m)).sort((x,y) => endOf(y) - endOf(x) || gOrd(y) - gOrd(x)).forEach(m => {
     const cell = cells.slice().reverse().filter(free).sort((x,y) => y.ti - x.ti || x.c - y.c)[0];
     if(cell) take(m, cell);
   });
-  ms.filter(m => m.kind === "f" && !m.after).sort((x,y) => gOrd(x) - gOrd(y)).forEach(m => { const cell = cells.find(free); if(cell) take(m, cell); });
+  ms.filter(m => m.kind === "f" && !m.after && auto(m)).sort((x,y) => gOrd(x) - gOrd(y)).forEach(m => { const cell = cells.find(free); if(cell) take(m, cell); });
   const placed = ms.filter(m => pos[m.id]).map(m => {
     const p = pos[m.id], early = m.after && m.after.some(id => !pos[id] || pos[id].ti >= p.ti);
-    return {...m, day: d.id, start: times[p.ti], court: p.c, early};
+    return {...m, day: d.id, start: times[p.ti], court: p.c, early, fixed: !!(fijos[m.id] && fijos[m.id].m)};
   });
   return {day: d, times, placed, left: ms.filter(m => !pos[m.id])};
 }
@@ -1427,8 +1556,8 @@ function renderHorario(){
   const cell = {};
   sch.matches.forEach(m => cell[m.day+"@"+m.start+"#"+m.court] = m);
   let selM = null;
-  if(selected) selM = selected.kind === "s" ? sch.matches.find(m => m.id === selected.id) : sch.unscheduled.find(m => m.id === selected.id);
-  if(!selM) selected = null;
+  if(selected && selected.kind !== "f") selM = selected.kind === "s" ? sch.matches.find(m => m.id === selected.id) : sch.unscheduled.find(m => m.id === selected.id);
+  if(!selM && selected && selected.kind !== "f") selected = null;
   const A = selM ? availSets() : null;
   const pinnedN = sch.matches.filter(m => m.pinned).length;
   const nIss = Object.keys(issues).length;
@@ -1444,6 +1573,15 @@ function renderHorario(){
   if(ADMIN && scheduleOutdated()) h += `<div class="notice warn"><span>Has cambiado parejas desde la última generación. Vuelve a generar para incluir los cambios (los partidos fijados se respetan).</span></div>`;
   if(ADMIN && nIss) h += `<div class="notice warn"><span><b>${nIss} partido${nIss>1?"s":""} con avisos</b> (marcados con !). Pasa el ratón o toca el partido para ver el motivo.</span></div>`;
 
+  const selF = selected && selected.kind === "f" ? finalsPlan().placed.find(m => m.id === selected.id) : null;
+  if(selected && selected.kind === "f" && !selF) selected = null;
+  if(selF){
+    const g = groupOf(selF.g);
+    h += `<div class="selbar"><span><b>${esc(g.short)} · ${esc(selF.name)}</b> <span class="chip ${g.cls}">${esc(selF.a)} vs ${esc(selF.b)}</span></span>
+      <span class="small">Toca una celda libre de la fase final o otro partido para intercambiarlos.</span><span class="spacer"></span>
+      ${selF.fixed ? `<button class="btn sm" data-act="funpin">Soltar (colocación automática)</button>` : ""}
+      <button class="btn sm" data-act="deselect">Cancelar</button></div>`;
+  }
   if(selM){
     const g = groupOf(selM.g);
     h += `<div class="selbar"><span><b>${esc(pshort(pairById(selM.a)))} vs ${esc(pshort(pairById(selM.b)))}</b> ${g?`<span class="chip ${g.cls}">${esc(mlabel(selM))}</span>`:""}</span>
@@ -1458,14 +1596,17 @@ function renderHorario(){
     if(!d.on){
       const fp = d === finalsDay() ? finalsPlan() : null, fs = []; for(let t = d.start; t + cfg.duration <= d.end; t += cfg.duration) fs.push(t);
       const fc = {}; (fp ? fp.placed : []).forEach(m => fc[m.start + "#" + m.court] = m);
+      const fsel = selected && selected.kind === "f" ? selected.id : null;
       h += `<details class="day" data-day="${d.id}"${diasAbiertos.has(d.id) ? " open" : ""}><summary><h2>${esc(d.name)} <span>${fmt(d.start)}–${fmt(d.end)} · fases finales · ${fp ? fp.placed.length : 0} partidos${gsel.size ? ` · <b>${fp ? fp.placed.filter(m => matchVisible(m)).length : 0} de tu filtro</b>` : ""}</span></h2></summary>`;
       if(fp && fp.left.length) h += `<div class="notice warn"><span><b>No caben ${fp.left.length} partido${fp.left.length>1?"s":""} de fase final</b> (${esc(fp.left.map(m => groupOf(m.g).short + " " + m.name).join(", "))}). Amplía el horario del ${esc(d.name.toLowerCase())} o pon más niveles a «Solo final» en Ajustes.</span></div>`;
       h += `<div class="scroll"><table class="grid"><thead><tr><th></th>${cfg.courts.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>`;
       fs.forEach(t => { h += `<tr><td class="time">${fmt(t)}<small>a ${fmt(t+cfg.duration)}</small></td>${cfg.courts.map((c, ci) => {
         const m = fc[t + "#" + ci];
-        if(!m) return `<td><div class="cell final">Libre</div></td>`;
-        const g = groupOf(m.g);
-        return `<td><div class="cell ${g.cls}${!matchVisible(m) ? " dim" : ""}" style="cursor:default" title="${m.early ? "Se juega antes de que acaben sus semifinales" : ""}"><span class="tag">${esc(g.short)} · ${esc(m.name.toUpperCase())}${m.early ? `<span class="iss">!</span>` : ""}</span><span class="vs">${esc(m.a)}<br><i>vs</i> ${esc(m.b)}</span></div></td>`;
+        if(!m) return ADMIN ? `<td><button class="cell final${fsel ? " fits" : ""}" data-act="fdrop" data-start="${t}" data-court="${ci}">${fsel ? "Mover aquí" : "Libre"}</button></td>` : `<td><div class="cell final">Libre</div></td>`;
+        const g = groupOf(m.g), tit = m.early ? "Se juega antes de que acaben sus semifinales" : "";
+        const inner = `<span class="tag">${esc(g.short)} · ${esc(m.name.toUpperCase())}${m.fixed ? `<span class="pin">FIJADO</span>` : ""}${m.early ? `<span class="iss">!</span>` : ""}</span><span class="vs">${esc(m.a)}<br><i>vs</i> ${esc(m.b)}</span>`;
+        return ADMIN ? `<td><button class="cell ${g.cls}${!matchVisible(m) ? " dim" : ""}${fsel === m.id ? " sel" : ""}" data-act="fpick" data-fid="${esc(m.id)}" title="${tit}">${inner}</button></td>`
+          : `<td><div class="cell ${g.cls}${!matchVisible(m) ? " dim" : ""}" style="cursor:default" title="${tit}">${inner}</div></td>`;
       }).join("")}</tr>`; });
       h += `</tbody></table></div></details>`;
       return;
@@ -1506,16 +1647,178 @@ function renderHorario(){
   if(!sch.unscheduled.length){ if(ADMIN) h += `<p class="muted">Todos los partidos tienen pista y hora.</p>`; }
   else if(!ADMIN) h += `<p class="muted small">${sch.unscheduled.length} partido${sch.unscheduled.length>1?"s":""} pendiente${sch.unscheduled.length>1?"s":""} de hora. El organizador os avisará.</p>`;
   else {
-    h += `<p class="muted small">Toca un partido y luego una celda libre para colocarlo a mano. Para que entren solos: amplía la disponibilidad de esas parejas, acorta la duración del partido o sube el máximo de partidos por día en Ajustes.</p><div class="ulist">`;
+    h += `<div class="row"><p class="muted small" style="margin:0;flex:1;min-width:240px">Toca un partido para ver <b>por qué no entra</b> y qué puedes hacer. <b>Ayúdame a colocarlo todo</b> prueba miles de combinaciones y mueve partidos para hacer hueco, sin cambiar la disponibilidad de nadie.</p>
+      <button class="btn primary" data-act="dg-todo">Ayúdame a colocarlo todo</button></div><div class="ulist">`;
+    const A = availSets(), slots = buildSlots();
     sch.unscheduled.forEach(m => {
-      const g = groupOf(m.g);
-      h += `<button class="uitem ${selected && selected.kind==="u" && selected.id===m.id ? "sel" : ""}" data-act="pick-u" data-mid="${esc(m.id)}">
-        ${g?`<span class="chip ${g.cls}">${esc(mlabel(m))}</span>`:""}<span>${esc(pname(pairById(m.a)))} <span class="muted">vs</span> ${esc(pname(pairById(m.b)))}</span><span class="why">${esc(m.reason)}</span></button>`;
+      const g = groupOf(m.g), sel = selected && selected.kind==="u" && selected.id===m.id;
+      const n = slots.filter(s => canPlay(A, m.a, s) && canPlay(A, m.b, s)).length;
+      const why = m.reason === "Quitado a mano" ? m.reason : n ? `Coinciden en ${n} franja${n > 1 ? "s" : ""}, pero están ocupadas` : "No coinciden en ninguna franja";
+      h += `<button class="uitem ${sel ? "sel" : ""}" data-act="pick-u" data-mid="${esc(m.id)}" aria-expanded="${sel}">
+        ${g?`<span class="chip ${g.cls}">${esc(mlabel(m))}</span>`:""}<span>${esc(pname(pairById(m.a)))} <span class="muted">vs</span> ${esc(pname(pairById(m.b)))}</span><span class="why">${esc(why)}</span><span class="dg-ver">${sel ? "Cerrar" : "Ver por qué"}</span></button>`;
+      if(sel) h += renderDiag(m);
     });
     h += `</div>`;
   }
   if(ADMIN || sch.unscheduled.length) h += `</section>`;
   el.innerHTML = h;
+}
+
+/* ---------- Sin programar: diagnóstico, sugerencias y colocación asistida ---------- */
+function ctxActual(ignore){
+  const occ = {}, by = {};
+  state.schedule.matches.forEach(m => { if(ignore && ignore.has(m.id)) return; addCtx({occ, by}, m, m.day, m.start, m.court); });
+  return {occ, by};
+}
+function addCtx(ctx, m, day, start, court){
+  const x = {...m, day, start, court};
+  ctx.occ[day + "@" + start + "#" + court] = x; [m.a, m.b].forEach(p => (ctx.by[p] ||= []).push(x));
+}
+/* por qué el partido m no entra en la franja s (lista vacía = entra) y qué pista queda libre */
+function bloqueos(m, s, ctx, A){
+  const cfg = state.config, maxDay = cfg.maxPerDay > 0 ? cfg.maxPerDay : Infinity, out = [];
+  let court = -1;
+  for(let c = 0; c < cfg.courts.length; c++) if(!ctx.occ[s.day + "@" + s.start + "#" + c]){ court = c; break; }
+  if(court < 0) out.push({k: "pistas", t: "todas las pistas ocupadas"});
+  for(const pid of [m.a, m.b]){
+    const n = pshort(pairById(pid));
+    if(!canPlay(A, pid, s)) out.push({k: "disp", pid, t: n + " no puede"});
+    const same = (ctx.by[pid] || []).filter(o => o.day === s.day && o.id !== m.id);
+    if(same.some(o => o.start === s.start)) out.push({k: "vez", pid, t: n + " ya juega a esa hora"});
+    else if(same.some(o => (o.start < s.start ? s.start - (o.start + cfg.duration) : o.start - s.end) < cfg.minRest)) out.push({k: "desc", pid, t: n + " no descansaría lo mínimo"});
+    if(same.length >= maxDay) out.push({k: "max", pid, t: `${n} ya juega ${same.length} ese día (máx. ${cfg.maxPerDay})`});
+  }
+  return {court, out};
+}
+const slotTxt = s => `${dshort(dayById(s.day))} ${fmt(s.start)}`;
+/* hacer hueco: mover un partido que estorba a otra franja válida y colocar u en su sitio */
+function hacerHueco(u, comunes, A, max = 3){
+  const slots = buildSlots(), base = ctxActual(), res = [], vistos = new Set();
+  for(const s of comunes){
+    const b = bloqueos(u, s, base, A);
+    if(b.out.some(x => x.k === "disp")) continue;
+    const estorban = new Set();
+    if(b.court < 0) state.config.courts.forEach((c, ci) => { const o = base.occ[s.day + "@" + s.start + "#" + ci]; if(o) estorban.add(o.id); });
+    b.out.filter(x => x.pid).forEach(x => (base.by[x.pid] || []).filter(o => o.day === s.day).forEach(o => estorban.add(o.id)));
+    const lista = [...estorban].map(id => state.schedule.matches.find(m => m.id === id)).sort((x, y) => (x.pinned ? 1 : 0) - (y.pinned ? 1 : 0));
+    for(const x of lista){
+      if(vistos.has(x.id)) continue;
+      const ctx = ctxActual(new Set([x.id])), bu = bloqueos(u, s, ctx, A);
+      if(bu.out.length) continue;
+      addCtx(ctx, u, s.day, s.start, bu.court);
+      const destinos = slots.filter(sj => !(sj.day === x.day && sj.start === x.start)).map(sj => ({sj, b: bloqueos(x, sj, ctx, A)})).filter(o => !o.b.out.length);
+      if(!destinos.length) continue;
+      const d = destinos.sort((p, q) => (p.sj.day === x.day ? 0 : 1) - (q.sj.day === x.day ? 0 : 1) || Math.abs(p.sj.start - x.start) - Math.abs(q.sj.start - x.start))[0];
+      vistos.add(x.id);
+      res.push({u: {day: s.day, start: s.start, court: bu.court}, x: x.id, to: {day: d.sj.day, start: d.sj.start, court: d.b.court}});
+      if(res.length >= max) return res;
+      break;
+    }
+  }
+  return res;
+}
+/* franjas en las que solo falta que una pareja pueda (para pedirle que amplíe) */
+function casiCoinciden(u, slots, ctx, A, max = 3){
+  const out = [];
+  slots.forEach(s => {
+    const b = bloqueos(u, s, ctx, A), falta = b.out.filter(x => x.k === "disp");
+    if(falta.length !== 1 || b.out.length !== 1) return;
+    const pid = falta[0].pid, set = (A[pid] || {})[s.day] || new Set(), need = [];
+    for(let c = s.start - (s.start % 30); c < s.end; c += 30) if(!set.has(c)) need.push(c);
+    const dist = set.size ? Math.min(...[...set].map(c => c + 30 <= s.start ? s.start - (c + 30) : c >= s.end ? c - s.end : 0)) : 9999;
+    out.push({s, pid, need, court: b.court, coste: need.length * 30 + dist});
+  });
+  return out.sort((x, y) => x.coste - y.coste).filter((o, i, arr) => arr.findIndex(z => z.pid === o.pid && z.s.day === o.s.day && Math.abs(z.s.start - o.s.start) < 120) === i).slice(0, max);
+}
+/* cambio de subgrupo que deja menos cruces de parejas sin ninguna franja en común */
+function mejorCambioSub(u, slots, A){
+  if(!state.config.subSize || subCount(u.g) < 2) return null;
+  const ps = state.pairs.filter(p => gkey(p) === u.g), comun = {};
+  const cc = (x, y) => { const k = x.id < y.id ? x.id + y.id : y.id + x.id; return comun[k] ??= slots.some(s => canPlay(A, x.id, s) && canPlay(A, y.id, s)); };
+  const malos = () => { let n = 0; ps.forEach((x, i) => ps.slice(i + 1).forEach(y => { if(x.sub === y.sub && !cc(x, y)) n++; })); return n; };
+  const ahora = malos(); let best = null;
+  for(const p of [pairById(u.a), pairById(u.b)]) for(const q of ps){
+    if(q.sub === p.sub) continue;
+    [p.sub, q.sub] = [q.sub, p.sub];
+    const n = malos();
+    [p.sub, q.sub] = [q.sub, p.sub];
+    if(n < ahora && (!best || n < best.n)) best = {p: p.id, q: q.id, n, ahora};
+  }
+  return best;
+}
+function diagnostico(u){
+  const slots = buildSlots(), A = availSets(), ctx = ctxActual();
+  const comunes = slots.filter(s => canPlay(A, u.a, s) && canPlay(A, u.b, s));
+  const directas = comunes.map(s => ({s, b: bloqueos(u, s, ctx, A)})).filter(o => !o.b.out.length);
+  return {slots, A, ctx, comunes, directas,
+    huecos: directas.length ? [] : hacerHueco(u, comunes, A),
+    casi: directas.length ? [] : casiCoinciden(u, slots, ctx, A),
+    sub: comunes.length ? null : mejorCambioSub(u, slots, A),
+    bloqueadas: comunes.map(s => ({s, out: bloqueos(u, s, ctx, A).out})).filter(o => o.out.length)};
+}
+function diagDias(u, A){
+  const pa = pairById(u.a), pb = pairById(u.b);
+  return state.config.days.filter(d => d.on).map(d => {
+    let ca = "", cb = "", cc = "", hay = false;
+    for(let t = d.start; t + 30 <= d.end; t += 30){
+      const a = !!(A[u.a] && A[u.a][d.id] && A[u.a][d.id].has(t)), b = !!(A[u.b] && A[u.b][d.id] && A[u.b][d.id].has(t));
+      const tip = ` title="${fmt(t)}"`;
+      ca += `<i class="${a ? "on" : ""}"${tip}></i>`; cb += `<i class="${b ? "on" : ""}"${tip}></i>`; cc += `<i class="${a && b ? "ok" : ""}"${tip}></i>`; if(a && b) hay = true;
+    }
+    const txt = p => { const s = (p.avail || {})[d.id] || []; return s.length ? rangesOf(s) : "no puede"; };
+    return `<div class="dg-day"><b>${esc(d.name)} <span class="muted">${fmt(d.start)}–${fmt(d.end)}</span></b>
+      <span class="dg-n">${esc(pshort(pa))}</span><span class="dg-bar">${ca}</span><span class="dg-t">${esc(txt(pa))}</span>
+      <span class="dg-n">${esc(pshort(pb))}</span><span class="dg-bar">${cb}</span><span class="dg-t">${esc(txt(pb))}</span>
+      <span class="dg-n">Coinciden</span><span class="dg-bar dg-com">${cc}</span><span class="dg-t">${hay ? "" : "nada"}</span></div>`;
+  }).join("");
+}
+function renderDiag(u){
+  const D = diagnostico(u), pa = pairById(u.a), pb = pairById(u.b), cfg = state.config;
+  let h = `<div class="diag"><div class="dg-dias">${diagDias(u, D.A)}</div>`;
+  if(!D.comunes.length){
+    h += `<p><b>Por qué no entra:</b> ${esc(pshort(pa))} y ${esc(pshort(pb))} no tienen ninguna franja de ${cfg.duration} min en la que puedan las dos. Mira las barras: en ningún día coinciden lo suficiente.</p>`;
+  } else {
+    const resumen = D.bloqueadas.slice(0, 6).map(o => `<li><b>${esc(slotTxt(o.s))}</b>: ${esc(o.out.map(x => x.t).join(" · "))}</li>`).join("");
+    h += `<p><b>Por qué no entra:</b> coinciden en ${D.comunes.length} franja${D.comunes.length > 1 ? "s" : ""}, pero ${D.directas.length ? "hay hueco: puedes colocarlo ya." : "todas están bloqueadas:"}</p>${D.directas.length ? "" : `<ul class="dg-ul">${resumen}${D.bloqueadas.length > 6 ? `<li class="muted">y ${D.bloqueadas.length - 6} más…</li>` : ""}</ul>`}`;
+  }
+  const ops = [];
+  D.directas.slice(0, 4).forEach(o => ops.push(`<div class="dg-op"><span>Colocar en <b>${esc(slotTxt(o.s))}</b> · ${esc(cfg.courts[o.b.court])}</span><button class="btn sm primary" data-act="dg-place" data-mid="${esc(u.id)}" data-day="${o.s.day}" data-start="${o.s.start}" data-court="${o.b.court}">Colocar</button></div>`));
+  D.huecos.forEach(o => { const x = state.schedule.matches.find(m => m.id === o.x);
+    ops.push(`<div class="dg-op"><span><b>Hacer hueco:</b> mover ${esc(mlabel(x))} ${esc(pshort(pairById(x.a)))} vs ${esc(pshort(pairById(x.b)))} de ${esc(slotTxt(x))} a <b>${esc(slotTxt(o.to))}</b> (les va bien) y poner este en <b>${esc(slotTxt(o.u))}</b>.</span><button class="btn sm primary" data-act="dg-hueco" data-mid="${esc(u.id)}" data-op='${esc(JSON.stringify(o))}'>Hacerlo</button></div>`); });
+  if(!D.directas.length && D.comunes.length) ops.push(`<div class="dg-op"><span><b>Buscar una combinación:</b> mover varios partidos en cadena (cada uno a una hora que le vaya bien) hasta dejarle sitio. Los fijados no se tocan.</span><button class="btn sm primary" data-act="dg-cadena" data-mid="${esc(u.id)}">Buscar</button></div>`);
+  if(!D.directas.length && D.bloqueadas.some(o => o.out.every(x => x.k === "max"))) ops.push(`<div class="dg-op"><span>El límite de <b>${cfg.maxPerDay} partidos por día</b> lo impide. Subirlo a ${cfg.maxPerDay + 1} permite colocarlo.</span><button class="btn sm" data-act="dg-max" data-mid="${esc(u.id)}">Subir a ${cfg.maxPerDay + 1}</button></div>`);
+  if(D.sub){ const p = pairById(D.sub.p), q = pairById(D.sub.q);
+    ops.push(`<div class="dg-op"><span><b>Cambiar de subgrupo:</b> pasar ${esc(pshort(p))} al subgrupo ${q.sub} y ${esc(pshort(q))} al ${p.sub}. ${D.sub.n ? `Quedan ${D.sub.n} cruce${D.sub.n > 1 ? "s" : ""} sin coincidencia en el grupo (ahora ${D.sub.ahora}).` : "Así todas las parejas de esos subgrupos coinciden en algún momento."} Se recalcula el horario (los partidos fijados se respetan).</span><button class="btn sm" data-act="dg-sub" data-p="${esc(D.sub.p)}" data-q="${esc(D.sub.q)}">Cambiar</button></div>`); }
+  D.casi.forEach(o => { const p = pairById(o.pid);
+    ops.push(`<div class="dg-op"><span><b>Pedir a ${esc(pname(p))}</b>${p.tel ? ` (${esc(p.tel)})` : ""} si puede el <b>${esc(dayById(o.s.day).name.toLowerCase())} ${esc(rangesOf(o.need))}</b>. Con eso jugarían el ${esc(slotTxt(o.s))} en ${esc(cfg.courts[o.court])}.</span><button class="btn sm" data-act="dg-amplia" data-mid="${esc(u.id)}" data-pid="${esc(o.pid)}" data-day="${o.s.day}" data-start="${o.s.start}" data-court="${o.court}">Me ha dicho que sí</button></div>`); });
+  h += ops.length ? `<p style="margin:6px 0 0"><b>Qué puedes hacer:</b></p><div class="dg-ops">${ops.join("")}</div>` : `<p class="muted">No encuentro ningún arreglo sencillo. Puedes colocarlo a mano en una celda libre (quedará marcado con !) o ampliar el horario de los días en Ajustes.</p>`;
+  return h + `<p class="muted small" style="margin:0">También puedes tocar una celda libre del horario para colocarlo a mano: las amarillas les van bien a las dos parejas.</p></div>`;
+}
+function colocarU(uid, day, start, court, fijar = true){
+  const sch = state.schedule, u = sch.unscheduled.find(x => x.id === uid); if(!u) return false;
+  sch.unscheduled = sch.unscheduled.filter(x => x !== u);
+  sch.matches.push({id: u.id, a: u.a, b: u.b, g: u.g, sub: u.sub, day, start, court, pinned: fijar});
+  return true;
+}
+function aplicarHueco(uid, o){
+  const x = state.schedule.matches.find(m => m.id === o.x); if(!x) return false;
+  Object.assign(x, o.to);
+  return colocarU(uid, o.u.day, o.u.start, o.u.court);
+}
+/* coloca todo lo que se pueda sin pedir nada a las parejas */
+function ayudaColocar(){
+  const sch = state.schedule, antes = sch.unscheduled.length;
+  const prueba = solve(Math.max(300, Math.min(900, Math.round(90000 / (allMatches().length + 1)))), {desde: sch, chainMs: 4000});
+  if(prueba.unscheduled.length <= sch.unscheduled.length) state.schedule = prueba;
+  let seguir = true;
+  while(seguir){
+    seguir = false;
+    for(const u of [...state.schedule.unscheduled]){
+      const D = diagnostico(u);
+      if(D.directas.length){ const o = D.directas[0]; colocarU(u.id, o.s.day, o.s.start, o.b.court, false); seguir = true; }
+    }
+  }
+  return antes - state.schedule.unscheduled.length;
 }
 
 function moveTo(day, start, court){
@@ -2018,11 +2321,71 @@ document.addEventListener("click", async e => {
   else if(act === "pick"){
     const mid = b.dataset.mid;
     if(selected && selected.id === mid){ selected = null; renderHorario(); return; }
-    if(selected){ const m = state.schedule.matches.find(x => x.id === mid); moveTo(m.day, m.start, m.court); return; }
+    if(selected && selected.kind !== "f"){ const m = state.schedule.matches.find(x => x.id === mid); moveTo(m.day, m.start, m.court); return; }
     selected = {kind: "s", id: mid}; renderHorario();
   }
+  else if(act === "dg-todo"){
+    b.disabled = true; b.textContent = "Buscando huecos…";
+    setTimeout(() => {
+      const n = ayudaColocar(), left = state.schedule.unscheduled;
+      selected = left.length ? {kind: "u", id: left[0].id} : null; save(); renderAll();
+      toast(left.length ? `${n ? `He colocado ${n}. ` : "No he podido colocar ninguno más. "}Quedan ${left.length}: te enseño qué hacer con cada uno.` : `Listo: he colocado ${n} y ya están todos`);
+      if(left.length) setTimeout(() => { const el = document.querySelector(".diag"); el && el.scrollIntoView({block: "center"}); }, 50);
+    }, 30);
+  }
+  else if(act === "dg-place"){ colocarU(b.dataset.mid, b.dataset.day, +b.dataset.start, +b.dataset.court); selected = null; save(); renderAll(); toast("Partido colocado"); }
+  else if(act === "dg-hueco"){ aplicarHueco(b.dataset.mid, JSON.parse(b.dataset.op)); selected = null; save(); renderAll(); toast("Hecho: los dos partidos tienen hora"); }
+  else if(act === "dg-cadena"){
+    b.disabled = true; b.textContent = "Buscando…";
+    setTimeout(() => {
+      const prev = state.schedule, antes = Object.fromEntries(prev.matches.map(m => [m.id, m.day + m.start + "#" + m.court]));
+      const nuevo = solve(0, {desde: prev, soloDesde: true, solo: b.dataset.mid, chainMs: 3000});
+      if(nuevo.unscheduled.some(x => x.id === b.dataset.mid)){ toast("No hay ninguna combinación que lo deje entrar sin cambiar disponibilidades. Mira las otras opciones."); b.disabled = false; b.textContent = "Buscar"; return; }
+      const movidos = nuevo.matches.filter(m => antes[m.id] && antes[m.id] !== m.day + m.start + "#" + m.court).length;
+      state.schedule = nuevo; selected = null; save(); renderAll();
+      toast(`Colocado${movidos ? ` moviendo ${movidos} partido${movidos > 1 ? "s" : ""}` : ""}`);
+    }, 30);
+  }
+  else if(act === "dg-max"){
+    state.config.maxPerDay++;
+    const u = state.schedule.unscheduled.find(x => x.id === b.dataset.mid), D = u && diagnostico(u);
+    if(D && D.directas.length) colocarU(u.id, D.directas[0].s.day, D.directas[0].s.start, D.directas[0].b.court);
+    selected = null; save(); renderAll(); toast(`Máximo: ${state.config.maxPerDay} partidos por día`);
+  }
+  else if(act === "dg-sub"){
+    const p = pairById(b.dataset.p), q = pairById(b.dataset.q); [p.sub, q.sub] = [q.sub, p.sub];
+    b.disabled = true; b.textContent = "Recalculando…";
+    setTimeout(() => { generate(); selected = null; save(); renderAll();
+      toast(state.schedule.unscheduled.length ? `Subgrupos cambiados. Quedan ${state.schedule.unscheduled.length} sin programar` : "Subgrupos cambiados: todos los partidos tienen hora"); }, 30);
+  }
+  else if(act === "dg-amplia"){
+    const p = pairById(b.dataset.pid), d = b.dataset.day, st = +b.dataset.start, set = new Set((p.avail ||= {})[d] || []);
+    for(let c = st - (st % 30); c < st + state.config.duration; c += 30) set.add(c);
+    p.avail[d] = [...set].sort((x, y) => x - y);
+    colocarU(b.dataset.mid, d, st, +b.dataset.court); selected = null; save(); renderAll(); toast(`Disponibilidad de ${pshort(p)} ampliada y partido colocado`);
+  }
+  else if(act === "fpick"){
+    const id = b.dataset.fid;
+    if(selected && selected.id === id){ selected = null; renderHorario(); return; }
+    if(selected && selected.kind === "f"){
+      const fp = finalsPlan(), a = fp.placed.find(m => m.id === selected.id), o = fp.placed.find(m => m.id === id);
+      const fx = state.finalsPos ||= {};
+      fp.placed.forEach(m => { fx[m.id] ||= {start: m.start, court: m.court}; });
+      fx[a.id] = {start: o.start, court: o.court, m: true}; fx[o.id] = {start: a.start, court: a.court, m: true};
+      selected = null; save(); renderAll(); toast("Partidos intercambiados"); return;
+    }
+    selected = {kind: "f", id}; renderHorario();
+  }
+  else if(act === "fdrop"){
+    if(!selected || selected.kind !== "f") return;
+    const fp = finalsPlan(), fx = state.finalsPos ||= {};
+    fp.placed.forEach(m => { fx[m.id] ||= {start: m.start, court: m.court}; });
+    fx[selected.id] = {start: +b.dataset.start, court: +b.dataset.court, m: true};
+    selected = null; save(); renderAll();
+  }
+  else if(act === "funpin"){ if(state.finalsPos) delete state.finalsPos[selected.id]; selected = null; save(); renderAll(); }
   else if(act === "pick-u"){ const mid = b.dataset.mid; selected = selected && selected.id === mid ? null : {kind: "u", id: mid}; renderHorario(); }
-  else if(act === "drop"){ if(selected) moveTo(b.dataset.day, +b.dataset.start, +b.dataset.court); }
+  else if(act === "drop"){ if(selected && selected.kind !== "f") moveTo(b.dataset.day, +b.dataset.start, +b.dataset.court); }
   else if(act === "deselect"){ selected = null; renderHorario(); }
   else if(act === "unschedule"){
     const sch = state.schedule, m = sch.matches.find(x => x.id === selected.id);
@@ -2837,6 +3200,7 @@ function renderConfig(){
           <td><button type="button" class="b b-ghost" style="padding:6px 10px;color:var(--bad)" data-act="borrar-ins" data-id="${esc(r.clave)}" title="Borrar inscripción">Borrar</button></td></tr>`).join("")}
       </tbody></table></div>` : ""}
       <p class="lead small" style="margin:0">Al pasarlas se crean como parejas con su disponibilidad. Puedes revisarlas en <b>Parejas</b>.</p>
+      <div style="display:flex;justify-content:flex-end"><button type="button" class="b b-soft fold-cerrar">Ocultar inscripciones</button></div>
     </div></details>
     ${tarjetaHorario(nuevas.length)}
     <div class="sec-title" style="margin:18px 0 0"><h2>Ajustes del cuadrante</h2><span class="sec-line" aria-hidden="true"></span></div>`;
@@ -2894,7 +3258,7 @@ document.addEventListener("click", async e => {
   else if(act === "club-quitar" && ADMIN){ if(await guardarClub({[b.dataset.k]: ""})){ renderClubCfg(); renderHome(); toast("Imagen quitada"); } }
   else if(act === "ir-torneos") $("#lista-torneos").scrollIntoView({behavior: "smooth", block: "start"});
   else if(act === "ins-todo" || act === "ins-nada") document.querySelectorAll(`#insgrid .c[data-d="${b.dataset.d}"]`).forEach(c => c.classList.toggle("on", act === "ins-todo"));
-  else if(act === "gsel"){ const k = b.dataset.g; if(!k) gsel.clear(); else if(gsel.has(k)) gsel.delete(k); else gsel.add(k); abrirDiasDelFiltro(); renderAll(); }
+  else if(act === "gsel"){ const k = b.dataset.g; gsel = !k || (gsel.has(k) && gsel.size === 1) ? new Set() : new Set([k]); abrirDiasDelFiltro(); renderAll(); }
   else if(act === "pdf") guardarPDF(b.dataset.what, b);
   else if(act === "cat-lvl" && ADMIN){
     const c = state.config, cat = b.dataset.cat, lv = b.dataset.lv, cur = levelsFor(cat);
@@ -2965,7 +3329,7 @@ document.addEventListener("click", async e => {
   }
   else if(act === "borrar-horario" && ADMIN){
     if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "Pulsa otra vez: se borra el horario (las parejas se quedan)"; return; }
-    state.schedule = null; selected = null; save(); renderTorneo(); toast("Horario borrado");
+    state.schedule = null; delete state.finalsPos; selected = null; save(); renderTorneo(); toast("Horario borrado");
   }
   else if(act === "ins-a-cuadrante" && ADMIN){
     const dentro = new Set(state.pairs.map(p => p.src).filter(Boolean));

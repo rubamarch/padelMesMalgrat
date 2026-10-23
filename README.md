@@ -85,6 +85,15 @@ En un par de minutos la web queda en https://rubamarch.github.io/padelMesMalgrat
    cuadrante las inscripciones nuevas, reparte grupos y coloca los partidos). Después cambia el estado a
    **En juego**: desde ese momento los jugadores ven horarios y cuadros. Si cambian parejas, **Refrescar horario**.
 
+### Horario: colocar partidos
+
+- Toca un partido (también los de fase final) y luego una celda libre u otro partido para moverlo o intercambiarlo.
+- **Sin programar**: toca un partido para ver *por qué no entra* (disponibilidad de las dos parejas día a día y qué
+  bloquea cada franja) y las soluciones: colocarlo, hacer hueco moviendo otro partido, buscar una combinación moviendo
+  varios, subir el máximo por día, cambiar de subgrupo o pedir a una pareja que amplíe su horario.
+- **Ayúdame a colocarlo todo** recoloca lo que se pueda sin cambiar la disponibilidad de nadie y respeta los partidos fijados.
+  Si después queda algo, es que con esos datos no cabe: hace falta uno de los cambios anteriores.
+
 ## Actualizar la base de datos
 
 Cuando una versión nueva cambie `supabase/schema.sql`, vuelve a pegarlo entero en **SQL Editor → Run**.
