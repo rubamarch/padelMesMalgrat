@@ -6,6 +6,7 @@
 <meta name="description" content="Torneos de pádel del club: inscripciones, horarios y cuadros.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%233b82f6%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%229%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222.4%22/%3E%3C/svg%3E">
 <title>Torneos · Padel Mes Malgrat</title>
+<script>try{const t=localStorage.getItem("pmm-tema");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -151,6 +152,11 @@
     overflow: hidden; box-shadow: var(--shadow-sm); cursor: pointer; text-align: left; padding: 0;
     transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
   }
+  .tcard-wrap { position: relative; display: flex; min-width: 0; }
+  .tcard-wrap > .tcard { flex: 1; min-width: 0; }
+  .tdel { position: absolute; z-index: 3; top: 12px; right: 12px; border: 0; cursor: pointer; font: 700 12px var(--font); padding: 7px 12px; border-radius: 999px;
+    background: rgba(255,255,255,.92); color: var(--bad); box-shadow: var(--shadow-sm); transition: background-color .3s ease, color .3s ease; }
+  .tdel:hover, .tdel[data-armed] { background: var(--bad); color: #fff; }
   .tcard:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--line-strong); }
   .tcard:hover .poster img, .tcard:hover .pgen { transform: scale(1.04); }
   .poster { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--surface-2); max-width: 100%; }
@@ -163,6 +169,7 @@
   .badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
   .st-abierta::before { background: var(--ok); }
   .st-cerrada::before { background: var(--warn); }
+  .st-proximamente::before { background: var(--accent); }
   .st-juego::before { background: var(--live); animation: pulso 1.6s ease infinite; }
   .st-finalizado::before { background: var(--muted); }
   .st-oculto::before { background: var(--bad); }
@@ -2114,7 +2121,8 @@ const INICIAL = decodeURIComponent(location.hash.slice(1));
 const SB = APP.supabaseUrl && APP.supabaseAnonKey && window.supabase ? window.supabase.createClient(APP.supabaseUrl, APP.supabaseAnonKey) : null;
 const LIVE = !!SB;
 
-const ESTADOS = [["abierta", "Inscripción abierta"], ["cerrada", "Inscripción cerrada"], ["juego", "En juego"], ["finalizado", "Finalizado"], ["oculto", "Oculto"]];
+const ESTADOS = [["juego", "En juego"], ["abierta", "Inscripción abierta"], ["proximamente", "Próximamente"], ["cerrada", "Inscripción cerrada"], ["finalizado", "Finalizado"], ["oculto", "Oculto"]];
+const ORDEN_ESTADO = {juego: 0, abierta: 1, proximamente: 2, cerrada: 3, finalizado: 4, oculto: 5};
 const ESTADO_TXT = Object.fromEntries(ESTADOS);
 const TAB_TXT = {info: "Información", inscripcion: "Inscripción", horario: "Horario", cuadros: "Cuadros", parejas: "Parejas", pareja: "Tu pareja", config: "Configurador"};
 const ICON = {
@@ -2306,11 +2314,12 @@ function renderHome(){
   $("#tgrid").classList.remove("ordenable");
   if(vc){ renderClubCfg(); return; }
   const cuenta = k => k === "todos" ? torneos.length : torneos.filter(t => k === "abierta" ? t.estado === "abierta" : t.estado === k).length;
-  const fs = [["todos", "Todos"], ["abierta", "Inscripción abierta"], ["juego", "En juego"], ["finalizado", "Finalizados"]].concat(ADMIN ? [["cerrada", "Inscripción cerrada"], ["oculto", "Ocultos"]] : []).filter(([k]) => k === "todos" || cuenta(k));
+  const fs = [["todos", "Todos"], ["juego", "En juego"], ["abierta", "Inscripción abierta"], ["proximamente", "Próximamente"], ["cerrada", "Inscripción cerrada"], ["finalizado", "Finalizados"]].concat(ADMIN ? [["oculto", "Ocultos"]] : []).filter(([k]) => k === "todos" || cuenta(k));
   if(!fs.some(f => f[0] === homeFiltro)) homeFiltro = "todos";
   $("#filtros").innerHTML = (torneos.length ? fs.map(([k, l]) => `<button type="button" class="filtro" data-filtro="${k}" aria-pressed="${homeFiltro === k}">${l}<i>${cuenta(k)}</i></button>`).join("") : "")
-    + (ADMIN ? `<span style="flex:1"></span>${homeFiltro === "todos" && torneos.length > 1 ? `<span class="lead small">Arrastra las tarjetas para ordenarlas</span>` : ""}<button type="button" class="b b-primary" data-act="nuevo-torneo">+ Nuevo torneo</button>` : "");
-  const lista = torneos.filter(t => homeFiltro === "todos" || t.estado === homeFiltro).sort((a, b) => (a.orden || 0) - (b.orden || 0));
+    + (ADMIN ? `<span style="flex:1"></span>${homeFiltro === "todos" && torneos.length > 1 ? `<span class="lead small">Arrastra para ordenar dentro de cada estado</span>` : ""}<button type="button" class="b b-primary" data-act="nuevo-torneo">+ Nuevo torneo</button>` : "");
+  const lista = torneos.filter(t => homeFiltro === "todos" || t.estado === homeFiltro)
+    .sort((a, b) => ((ORDEN_ESTADO[a.estado] ?? 9) - (ORDEN_ESTADO[b.estado] ?? 9)) || ((a.orden || 0) - (b.orden || 0)));
   const g = $("#tgrid");
   if(!lista.length){
     g.innerHTML = `<div class="card vacio" style="grid-column:1/-1"><h2>No hay torneos publicados</h2><p class="lead">${ADMIN ? "Crea el primero con «+ Nuevo torneo»." : "Aquí aparecerán los próximos torneos del club."}</p></div>`;
@@ -2319,7 +2328,7 @@ function renderHome(){
   g.innerHTML = lista.map((t, i) => {
     const p = plazasTxt(t);
     const cats = (t.categorias || []).map(c => `<span class="tag-chip">${esc(c)}</span>`).join("") + (t.niveles && t.niveles.length ? `<span class="tag-chip">Niveles ${esc(t.niveles.join(" · "))}</span>` : "");
-    return `<button type="button" class="tcard entra" data-open="${esc(t.id)}" style="animation-delay:${i * 60}ms">
+    return `<div class="tcard-wrap entra" style="animation-delay:${i * 60}ms">${ADMIN ? `<button type="button" class="tdel" data-act="borrar-torneo-home" data-id="${esc(t.id)}" title="Borrar torneo">Borrar</button>` : ""}<button type="button" class="tcard" data-open="${esc(t.id)}">
       <div class="poster">${posterHTML(t)}<span class="badge st-${t.estado}">${ESTADO_TXT[t.estado]}</span></div>
       <div class="tbody">
         <span class="tdate">${esc(t.fechas)}</span>
@@ -2328,7 +2337,7 @@ function renderHome(){
         <div class="chips">${cats}</div>
         <div class="tfoot"><div class="plz"><span>${p.txt}</span>${t.plazas ? `<div class="barra"><i style="width:${p.pct}%"></i></div>` : ""}</div>
           <span class="cta">${ctaTxt(t)} <span class="flecha">→</span></span></div>
-      </div></button>`;
+      </div></button></div>`;
   }).join("");
   if(ADMIN && homeFiltro === "todos" && window.Sortable && lista.length > 1){
     g.classList.add("ordenable");
@@ -2355,7 +2364,14 @@ function clubDatos(){
   for(const k in CLUBA) if(CLUBA[k]) c[k] = CLUBA[k];
   return c;
 }
+const TEMAS = [["auto", "Automático"], ["claro", "Claro"], ["oscuro", "Oscuro"]];
+function aplicarTema(){
+  const t = {claro: "light", oscuro: "dark"}[CLUBA.tema] || "";
+  if(t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  try{ localStorage.setItem("pmm-tema", t); }catch(e){}
+}
 function aplicarClub(){
+  aplicarTema();
   const C = clubDatos();
   const h = document.querySelector(".hero");
   h.classList.toggle("con-foto", !!C.portada);
@@ -2382,7 +2398,10 @@ function renderClubCfg(){
   const img = (k, titulo, ayuda, logo) => `<div class="campo"><span class="etq">${titulo}</span>
       <div class="club-img${logo ? " logo-prev" : ""}">${C[k] ? `<img src="${esc(C[k])}" alt="${esc(titulo)}">` : `<span${logo ? ` style="color:rgba(255,255,255,.7)"` : ""}>${ayuda}</span>`}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="b b-soft" for="club-${k}" style="cursor:pointer">${C[k] ? "Cambiar" : "Subir"}</label><input type="file" class="club-file" id="club-${k}" data-k="${k}" accept="image/*" hidden>${CLUBA[k] ? `<button type="button" class="b b-ghost" data-act="club-quitar" data-k="${k}">Quitar</button>` : ""}</div></div>`;
-  $("#club-cfg").innerHTML = `<div class="card"><div><h2>Imágenes del club</h2><p class="lead">Se ven en toda la web. Súbelas desde aquí: el logo en PNG con fondo transparente y las fotos en horizontal.</p></div>
+  const tema = CLUBA.tema || "auto";
+  $("#club-cfg").innerHTML = `<div class="card"><div><h2>Apariencia</h2><p class="lead">Modo de color de toda la web. <b>Automático</b> sigue el ajuste del móvil u ordenador de cada persona.</p></div>
+      <div class="seg" role="radiogroup" aria-label="Modo de color" style="max-width:420px">${TEMAS.map(([v, l]) => `<input type="radio" name="cl-tema" id="cl-tema-${v}" value="${v}"${v === tema ? " checked" : ""}><label for="cl-tema-${v}">${l}</label>`).join("")}</div></div>
+    <div class="card"><div><h2>Imágenes del club</h2><p class="lead">Se ven en toda la web. Súbelas desde aquí: el logo en PNG con fondo transparente y las fotos en horizontal.</p></div>
     <div class="grid-3">
       ${img("logo", "Logo", "Sin logo", true)}
       ${img("portada", "Foto de portada", "Sin foto: fondo azul con la pista y la pelota")}
@@ -2534,6 +2553,7 @@ function renderInfo(){
   const dias = c.days.filter(d => d.on || d.finals);
   let cta = "";
   if(t.estado === "abierta") cta = lleno(t) ? `<div class="aviso warn">El torneo está completo. Si quieres entrar en lista de espera, habla con el club.</div>` : `<button type="button" class="b b-primary b-lg" data-tab-go="inscripcion">Inscribir a mi pareja <span class="flecha">→</span></button>`;
+  else if(t.estado === "proximamente") cta = `<div class="aviso">Muy pronto abriremos las inscripciones de este torneo. ¡Vuelve en unos días!</div>`;
   else if(t.estado === "cerrada") cta = `<div class="aviso">Las inscripciones están cerradas. Muy pronto publicaremos los grupos y el horario aquí mismo.</div>`;
   else if(t.estado === "juego") cta = `<button type="button" class="b b-primary" data-tab-go="horario">Ver horario de partidos <span class="flecha">→</span></button>`;
   $("#v-info").innerHTML = `<div class="info-grid">
@@ -2904,6 +2924,13 @@ document.addEventListener("click", async e => {
     try{ const r = await llamar("adminEstado", {pin: PIN, id: T.id, estado: $("#cfg-estado").value}); T.estado = r.estado; renderTorneo(); toast("Estado guardado: " + ESTADO_TXT[T.estado]); }
     catch(err){ toast(msgErr(err)); b.disabled = false; }
   }
+  else if(act === "borrar-torneo-home" && ADMIN){
+    const t = torneos.find(x => x.id === b.dataset.id); if(!t) return;
+    if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "¿Borrar «" + (t.nombre.length > 22 ? t.nombre.slice(0, 22) + "…" : t.nombre) + "»? Pulsa otra vez"; setTimeout(() => { if(b.isConnected){ delete b.dataset.armed; b.textContent = "Borrar"; } }, 5000); return; }
+    b.disabled = true; b.textContent = "Borrando…";
+    try{ await llamar("adminBorrarTorneo", t.id); torneos = torneos.filter(x => x.id !== t.id); renderHome(); toast("Torneo borrado: " + t.nombre); }
+    catch(err){ toast(msgErr(err)); b.disabled = false; b.textContent = "Borrar"; }
+  }
   else if(act === "nuevo-torneo" && ADMIN){ $("#modal-nuevo").hidden = false; $("#nuevo-err").hidden = true; $("#nuevo-nombre").value = ""; $("#nuevo-fechas").value = ""; $("#nuevo-nombre").focus(); }
   else if(act === "guardar-torneo" && ADMIN){
     const t = leerTorneoForm();
@@ -3003,6 +3030,13 @@ async function onDatesChanged(){
   catch(err){ toast("No se han guardado las fechas: " + msgErr(err)); }
 }
 document.addEventListener("change", async e => {
+  if(e.target.name === "cl-tema" && ADMIN){
+    const antes = CLUBA.tema, v = e.target.value === "auto" ? "" : e.target.value;
+    CLUBA.tema = v; aplicarTema();
+    if(await guardarClub({tema: v})) toast(v ? `Modo ${v} guardado` : "Modo automático guardado");
+    else { CLUBA.tema = antes; aplicarTema(); renderClubCfg(); }
+    return;
+  }
   if(e.target.name === "i-cat"){ $("#niv-box").innerHTML = nivelesHTML(e.target.value); return; }
   if(e.target.id === "tf-date-from" || e.target.id === "tf-date-to"){ if(ADMIN) cambiarFechas(e.target.id === "tf-date-from" ? "from" : "to", e.target.value); return; }
   if(e.target.classList && e.target.classList.contains("club-file") && ADMIN){

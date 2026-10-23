@@ -11,6 +11,7 @@ y un configurador para los organizadores.
 
 | Estado del torneo | Jugadores |
 |---|---|
+| Próximamente | Información (aviso de que pronto se abre) |
 | Inscripción abierta | Información · Inscripción |
 | Inscripción cerrada | Información |
 | En juego / Finalizado | Horario · Cuadros · Parejas · Tu pareja · Información |
@@ -18,7 +19,9 @@ y un configurador para los organizadores.
 
 Los **organizadores** entran con "Acceso organizador" (al pie de la página) y además pueden:
 
-- En la portada: crear torneos, **ordenarlos arrastrando** las tarjetas y, en la pestaña *Club*, subir el **logo**,
+- En la portada: crear y **borrar** torneos, **ordenarlos arrastrando** las tarjetas (siempre van primero los que se
+  juegan, luego inscripción abierta, próximamente, inscripción cerrada y ocultos) y, en la pestaña *Club*, elegir el
+  **modo de color** (automático, claro u oscuro), subir el **logo**,
   la **foto de portada**, la **carátula por defecto** de los torneos sin cartel y los datos de **contacto** del pie.
   Las imágenes se suben desde la web (no van en este repositorio).
 - En cada torneo (*Configurador*): estado, datos y cartel, **welcome pack** (camiseta, pantalones, sudadera u otro;

@@ -13,12 +13,17 @@ create table if not exists public.torneos (
   precio      text not null default '',
   plazas      integer not null default 0 check (plazas >= 0),
   estado      text not null default 'oculto'
-              check (estado in ('abierta', 'cerrada', 'juego', 'finalizado', 'oculto')),
+              check (estado in ('abierta', 'proximamente', 'cerrada', 'juego', 'finalizado', 'oculto')),
   descripcion text not null default '',
   cartel      text not null default '',
   orden       integer not null default 0,
   creado      timestamptz not null default now()
 );
+
+-- Estados válidos (también en bases creadas con una versión anterior)
+alter table public.torneos drop constraint if exists torneos_estado_check;
+alter table public.torneos add constraint torneos_estado_check
+  check (estado in ('abierta', 'proximamente', 'cerrada', 'juego', 'finalizado', 'oculto'));
 
 create table if not exists public.inscripciones (
   id         uuid primary key default gen_random_uuid(),
