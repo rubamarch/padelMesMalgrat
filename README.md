@@ -18,8 +18,9 @@ y un configurador para los organizadores.
 
 Los **organizadores** entran con "Acceso organizador" (al pie de la página) y además pueden:
 
-- En la portada: crear torneos, **ordenarlos arrastrando** las tarjetas y guardar las **fotos** de cada torneo
-  (pestaña *Fotos*, privada).
+- En la portada: crear torneos, **ordenarlos arrastrando** las tarjetas y, en la pestaña *Club*, subir el **logo**,
+  la **foto de portada**, la **carátula por defecto** de los torneos sin cartel y los datos de **contacto** del pie.
+  Las imágenes se suben desde la web (no van en este repositorio).
 - En cada torneo (*Configurador*): estado, datos y cartel, **welcome pack** (camiseta, pantalones, sudadera u otro;
   el jugador elige talla), inscripciones con teléfono, extras, tallas y **pagado**, y pasar inscritos al cuadrante.
 - Ajustes: **fechas del torneo** (aparecen todos los días y se desactivan los que no se juegan), tipo de partido

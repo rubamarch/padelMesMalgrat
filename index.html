@@ -528,7 +528,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   .hero.con-foto { background: var(--night) var(--hero-img) center / cover no-repeat; }
   .hero.con-foto::before { inset: 0; width: auto; height: auto; transform: none; border: 0;
     background: linear-gradient(90deg, rgba(0,34,71,.9) 0%, rgba(0,34,71,.6) 50%, rgba(0,34,71,.15) 100%), linear-gradient(0deg, rgba(0,34,71,.85) 0%, transparent 50%); }
-  .hero.con-foto .hero-ball { display: none; }
+  .hero.con-foto .hero-ball { z-index: 0; }
   .hero-ball { position: absolute; z-index: -1; right: 9%; top: 14%; width: clamp(90px, 15vw, 160px); aspect-ratio: 1; border-radius: 50%;
     background: radial-gradient(circle at 34% 30%, #f5f9b8 0%, var(--ball) 48%, #a9b236 100%); box-shadow: 0 30px 50px -10px rgba(0,0,0,.55), inset -10px -14px 24px rgba(0,0,0,.16);
     animation: bote 5s ease-in-out infinite; }
@@ -605,9 +605,11 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   .pcard b { font-weight: 600; overflow-wrap: anywhere; }
   .pie .link { color: rgba(255,255,255,.75); }
   .pie .link:hover { color: #fff; }
+  .grid-3 { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); align-items: start; }
   .club-img { aspect-ratio: 16 / 7; border-radius: 14px; overflow: hidden; background: var(--surface-2); display: grid; place-items: center; color: var(--muted); font-size: 13px; text-align: center; padding: 0; max-width: 100%; }
   .club-img img { width: 100%; height: 100%; object-fit: cover; }
-  .club-img.logo-prev { aspect-ratio: 16 / 7; background: var(--navy); }
+  .club-img.logo-prev { aspect-ratio: 16 / 7; background: repeating-conic-gradient(var(--surface-2) 0 25%, var(--surface) 0 50%) 0 0 / 18px 18px; }
+  .club-img.logo-prev span { color: var(--muted) !important; }
   .club-img.logo-prev img { object-fit: contain; padding: 14px; }
   @media (max-width: 760px) { .pie-in { grid-template-columns: 1fr; } }
   @media (max-width: 560px) { .hero { min-height: 0; } .hero-in { padding-top: 40px; } .hstat span { font-size: 10.5px; letter-spacing: .03em; } .hero-ball { right: -6%; top: 6%; } }
@@ -625,8 +627,10 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   table.cross .gname{font-size:1rem}
   table.cross .rowh b{overflow:hidden;text-overflow:ellipsis;font-size:.88rem}
   table.cross .colh{font-size:.8rem;overflow:hidden;text-overflow:ellipsis}
+  table.cross td b,table.cross td span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
   table.cross td b{font-size:.82rem;line-height:1.15}
   table.cross td span{font-size:.68rem;line-height:1.15}
+  table.cross .pad{background:var(--surface-2)}
   .cuadro{gap:10px}
   .cuadro .ctitle{font-size:1.15rem;padding:6px 12px}
   .pdf .cell.dim{visibility:hidden}
@@ -713,12 +717,11 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
       <span aria-hidden="true">ℹ︎</span>
       <span>Vista de ejemplo con torneos y parejas inventados. Las inscripciones no se guardan. Para probar el modo organizador entra con cualquier correo y la contraseña <b>1234</b>.</span>
     </div>
-    <div class="tabs-in homeseg" id="homeseg" role="tablist" hidden><button type="button" class="tab" data-hv="torneos">Torneos</button><button type="button" class="tab admin-tab" data-hv="fotos">Fotos</button><button type="button" class="tab admin-tab" data-hv="club">Club</button></div>
+    <div class="tabs-in homeseg" id="homeseg" role="tablist" hidden><button type="button" class="tab" data-hv="torneos">Torneos</button><button type="button" class="tab admin-tab" data-hv="club">Club</button></div>
     <div class="filtros" id="filtros" role="group" aria-label="Filtrar torneos"></div>
     <div class="tgrid" id="tgrid" aria-live="polite">
       <div class="esq" style="height:400px"></div><div class="esq" style="height:400px"></div><div class="esq" style="height:400px"></div>
     </div>
-    <section class="sec" id="fotos" hidden></section>
     <section class="sec" id="club-cfg" hidden></section>
   </section>
 
@@ -1546,14 +1549,19 @@ function renderCuadros(){
   const issues = validateAll(), fplan = finalsPlan();
   let h = `<div class="row"><span class="spacer"></span>${ADMIN ? `<button class="btn" data-act="export-csv">Descargar CSV</button><button class="btn" data-act="copy-sheet">Copiar para Excel</button>` : ""}<button class="btn" data-act="pdf" data-what="cuadros">Descargar PDF</button></div>${gchips(gs)}`;
   if(!sch) h += `<div class="notice"><span>Genera el horario para ver las horas en los cuadros.</span></div>`;
-  gs.filter(g => !gsel.size || gsel.has(g.key)).forEach(g => {
+  const visibles = gs.filter(g => !gsel.size || gsel.has(g.key));
+  const maxCols = Math.max(1, ...visibles.flatMap(g => {
+    const ps = state.pairs.filter(p => gkey(p) === g.key), k = cfg.subSize ? subCount(g.key) : 1;
+    return Array.from({length: k}, (_, j) => (cfg.subSize ? ps.filter(p => subOf(p) === j + 1) : ps).length);
+  }));
+  visibles.forEach(g => {
     const ps = state.pairs.filter(p => gkey(p) === g.key); if(!ps.length) return;
     const k = cfg.subSize ? subCount(g.key) : 1;
     h += `<section class="cuadro"><h2 class="ctitle ${g.cls}">${esc(g.label.toUpperCase())}</h2>`;
     for(let i = 1; i <= k; i++){
       const list = cfg.subSize ? ps.filter(p => subOf(p) === i) : ps;
       if(!list.length) continue;
-      h += `<div class="scroll"><table class="cross" style="width:${200 + 112 * list.length}px"><colgroup><col style="width:200px">${list.map(() => `<col style="width:112px">`).join("")}</colgroup><thead><tr><th class="gname s${(i-1)%4}">GRUPO ${i}</th>${list.map(p => `<th class="colh" title="${esc(pname(p))}">${esc(pshort(p))}</th>`).join("")}</tr></thead><tbody>`;
+      h += `<div class="scroll"><table class="cross" style="width:${210 + 118 * maxCols}px"><colgroup><col style="width:210px">${Array.from({length: maxCols}, () => `<col style="width:118px">`).join("")}</colgroup><thead><tr><th class="gname s${(i-1)%4}">GRUPO ${i}</th>${list.map(p => `<th class="colh" title="${esc(pname(p))}">${esc(pshort(p))}</th>`).join("")}${`<th class="pad"></th>`.repeat(maxCols - list.length)}</tr></thead><tbody>`;
       list.forEach(p => {
         h += `<tr><th class="rowh" title="${esc(pname(p))}"><b>${esc(pname(p))}</b></th>`;
         list.forEach(q => {
@@ -1566,11 +1574,12 @@ function renderCuadros(){
             const iss = issues[m.id];
             h += `<td class="${iss ? "warn" : ""}" title="${esc(tip + (iss ? "\n" + iss.join("\n") : ""))}"><b>${esc(dayById(m.day) ? dshort(dayById(m.day)) : m.day)} ${hfmt(m.start)}</b><span>${esc(cfg.courts[m.court] || "")}${iss ? " · fuera de su horario" : ""}</span></td>`;
           } else if(u){
-            h += `<td class="none" title="${esc(tip)}"><b>Sin hora</b><span>${common ? "Coinciden " + esc(common) + ", pero no queda pista" : "No coinciden nunca"}</span></td>`;
+            h += `<td class="none" title="${esc(tip)}"><b>Sin hora</b><span>${common ? "Coinciden " + esc(common) + ", pero no queda pista" : "No coinciden"}</span></td>`;
           } else h += `<td class="muted">–</td>`;
         });
-        h += `</tr>`;
+        h += `${`<td class="pad"></td>`.repeat(maxCols - list.length)}</tr>`;
       });
+      for(let r = list.length; r < maxCols; r++) h += `<tr><th class="rowh pad"></th>${`<td class="pad"></td>`.repeat(maxCols)}</tr>`;
       h += `</tbody></table></div>`;
     }
     const fm = fplan.placed.filter(m => m.g === g.key);
@@ -2263,8 +2272,8 @@ function vacio(){ return {v: 1, config: defaultConfig(), pairs: [], schedule: nu
 function hashN(s){ let h = 0; for(const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); }
 function posterHTML(t){
   if(t.cartel) return `<img src="${esc(t.cartel)}" alt="Cartel de ${esc(t.nombre)}" loading="lazy" referrerpolicy="no-referrer">`;
-  const fotos = Array.isArray(APP.fotosTorneo) ? APP.fotosTorneo.filter(Boolean) : [];
-  if(fotos.length) return `<div class="pgen pfoto" style="background-image:url('${esc(encodeURI(fotos[(torneos.findIndex(x => x.id === t.id) + 1 || hashN(t.id) + 1) % fotos.length]))}')" aria-hidden="true"><small>${esc(t.fechas)}</small><strong>${esc(t.nombre)}</strong></div>`;
+  const car = clubDatos().caratula;
+  if(car) return `<div class="pgen pfoto" style="background-image:url('${esc(encodeURI(car))}')" aria-hidden="true"><small>${esc(t.fechas)}</small><strong>${esc(t.nombre)}</strong></div>`;
   return `<div class="pgen pg${hashN(t.id) % 4}" aria-hidden="true"><small>${esc(t.fechas)}</small><strong>${esc(t.nombre)}</strong></div>`;
 }
 function plazasTxt(t){
@@ -2293,12 +2302,11 @@ function renderHome(){
   renderHeroStats();
   $("#homeseg").hidden = !ADMIN; if(!ADMIN) homeVista = "torneos";
   document.querySelectorAll("#homeseg .tab").forEach(b => b.setAttribute("aria-selected", b.dataset.hv === homeVista));
-  const vf = homeVista === "fotos", vc = homeVista === "club";
-  $("#filtros").hidden = vf || vc; $("#tgrid").hidden = vf || vc; $("#fotos").hidden = !vf; $("#club-cfg").hidden = !vc;
-  $("#lista-torneos h2").textContent = vf ? "Fotos" : vc ? "Club" : "Torneos";
+  const vc = homeVista === "club";
+  $("#filtros").hidden = vc; $("#tgrid").hidden = vc; $("#club-cfg").hidden = !vc;
+  $("#lista-torneos h2").textContent = vc ? "Club" : "Torneos";
   if(sortable){ sortable.destroy(); sortable = null; }
   $("#tgrid").classList.remove("ordenable");
-  if(vf){ renderFotos(); return; }
   if(vc){ renderClubCfg(); return; }
   const cuenta = k => k === "todos" ? torneos.length : torneos.filter(t => k === "abierta" ? t.estado === "abierta" : t.estado === k).length;
   const fs = [["todos", "Todos"], ["abierta", "Inscripción abierta"], ["juego", "En juego"], ["finalizado", "Finalizados"]].concat(ADMIN ? [["cerrada", "Inscripción cerrada"], ["oculto", "Ocultos"]] : []).filter(([k]) => k === "todos" || cuenta(k));
@@ -2373,43 +2381,21 @@ async function guardarClub(cambios){
 }
 function renderClubCfg(){
   const campo = (k, l, ph, type = "text") => `<div class="campo"><label for="cl-${k}">${l}</label><input class="in cl" type="${type}" id="cl-${k}" data-k="${k}" value="${esc(CLUBA[k] || "")}" placeholder="${esc((APP.contacto || {})[k] || ph)}"></div>`;
-  $("#club-cfg").innerHTML = `<div class="card"><div><h2>Imagen del club</h2><p class="lead">La foto de portada sale en la cabecera de la web y el logo en el menú y en el pie. Mejor una foto horizontal de las pistas.</p></div>
-    <div class="grid-2">
-      <div class="campo"><span class="etq">Foto de portada</span><div class="club-img">${clubDatos().portada ? `<img src="${esc(clubDatos().portada)}" alt="Foto de portada">` : "Sin foto: se usa el fondo azul con la pista y la pelota"}</div>${!CLUBA.portada && APP.portada ? `<span class="lead small">Foto por defecto de la web. Sube otra para cambiarla.</span>` : ""}
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="b b-soft" for="club-portada" style="cursor:pointer">Subir foto</label><input type="file" id="club-portada" accept="image/*" hidden>${CLUBA.portada ? `<button type="button" class="b b-ghost" data-act="club-quitar" data-k="portada">Quitar</button>` : ""}</div></div>
-      <div class="campo"><span class="etq">Logo</span><div class="club-img logo-prev">${CLUBA.logo ? `<img src="${esc(CLUBA.logo)}" alt="Logo">` : `<span style="color:rgba(255,255,255,.7)">Sin logo</span>`}</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="b b-soft" for="club-logo" style="cursor:pointer">Subir logo</label><input type="file" id="club-logo" accept="image/*" hidden>${CLUBA.logo ? `<button type="button" class="b b-ghost" data-act="club-quitar" data-k="logo">Quitar</button>` : ""}</div>
-        <span class="lead small">Mejor PNG con fondo transparente.</span></div>
+  const C = clubDatos();
+  const img = (k, titulo, ayuda, logo) => `<div class="campo"><span class="etq">${titulo}</span>
+      <div class="club-img${logo ? " logo-prev" : ""}">${C[k] ? `<img src="${esc(C[k])}" alt="${esc(titulo)}">` : `<span${logo ? ` style="color:rgba(255,255,255,.7)"` : ""}>${ayuda}</span>`}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="b b-soft" for="club-${k}" style="cursor:pointer">${C[k] ? "Cambiar" : "Subir"}</label><input type="file" class="club-file" id="club-${k}" data-k="${k}" accept="image/*" hidden>${CLUBA[k] ? `<button type="button" class="b b-ghost" data-act="club-quitar" data-k="${k}">Quitar</button>` : ""}</div></div>`;
+  $("#club-cfg").innerHTML = `<div class="card"><div><h2>Imágenes del club</h2><p class="lead">Se ven en toda la web. Súbelas desde aquí: el logo en PNG con fondo transparente y las fotos en horizontal.</p></div>
+    <div class="grid-3">
+      ${img("logo", "Logo", "Sin logo", true)}
+      ${img("portada", "Foto de portada", "Sin foto: fondo azul con la pista y la pelota")}
+      ${img("caratula", "Carátula de los torneos", "Sin carátula: dibujo de pista. Se usa en los torneos que no tienen cartel propio")}
     </div></div>
     <div class="card"><div><h2>Contacto</h2><p class="lead">Sale en el pie de la web. Si dejas un campo vacío se usa el dato de config.js (en gris).</p></div>
       <div class="grid-2">${campo("email", "Correo", "info@tuclub.com", "email")}${campo("telefono", "Teléfono", "600 000 000", "tel")}${campo("direccion", "Dirección", "Calle, número, Malgrat de Mar")}${campo("instagram", "Instagram", "@padelmesmalgrat")}</div>
       <div><button type="button" class="b b-primary" data-act="club-guardar">Guardar contacto</button></div></div>`;
 }
 
-/* ---------- fotos (organizador) ---------- */
-function renderFotos(){
-  const opts = torneos.map(t => [t.id, t.nombre]).concat([["general", "General (sin torneo)"]]);
-  if(!opts.some(o => o[0] === fotosAlbum)) fotosAlbum = opts[0][0];
-  $("#fotos").innerHTML = `<div class="card"><div class="card-h"><div><h2>Fotos de los torneos</h2><p class="lead">Solo las ven los organizadores. Se guardan reducidas para no gastar espacio (el plan gratuito tiene 1 GB).</p></div></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <select class="in" id="foto-album" style="width:auto;min-width:240px" aria-label="Torneo">${opts.map(([v, l]) => `<option value="${esc(v)}" ${v === fotosAlbum ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>
-      <label class="b b-primary" for="foto-file" style="cursor:pointer">Subir fotos</label><input type="file" id="foto-file" accept="image/*" multiple hidden>
-      <span class="lead small" id="foto-info"></span></div>
-    <div class="fgrid" id="fgrid"><div class="esq" style="height:150px"></div><div class="esq" style="height:150px"></div></div></div>`;
-  cargarFotos();
-}
-async function cargarFotos(){
-  try{ fotos = await llamar("fotosListar", fotosAlbum) || []; pintarFotos(); }
-  catch(e){ const g = $("#fgrid"); if(g) g.innerHTML = `<p class="lead">${esc(msgErr(e))}</p>`; }
-}
-function pintarFotos(){
-  const g = $("#fgrid"); if(!g) return;
-  const mb = fotos.reduce((a, f) => a + (f.size || 0), 0) / 1048576;
-  $("#foto-info").textContent = fotos.length ? `${fotos.length} foto${fotos.length > 1 ? "s" : ""}${mb ? ` · ${mb.toFixed(1)} MB` : ""}` : "";
-  g.innerHTML = fotos.length ? fotos.map(f => `<figure class="foto"><a href="${esc(f.url)}" target="_blank" rel="noopener"><img src="${esc(f.url)}" alt="Foto del torneo" loading="lazy"></a>
-    <figcaption><a class="link" href="${esc(f.down || f.url)}" target="_blank" rel="noopener" download>Descargar</a><button type="button" class="link" style="color:var(--bad)" data-act="foto-del" data-path="${esc(f.path)}">Borrar</button></figcaption></figure>`).join("")
-    : `<p class="lead">Todavía no hay fotos de este torneo. Pulsa «Subir fotos» para añadirlas.</p>`;
-}
 async function comprimir(file){
   try{
     const img = await createImageBitmap(file), k = Math.min(1, 2400 / Math.max(img.width, img.height));
@@ -2418,21 +2404,6 @@ async function comprimir(file){
     return await new Promise(r => cv.toBlob(r, "image/jpeg", .85)) || file;
   }catch(e){ return file; }
 }
-async function subirFotos(files){
-  const info = $("#foto-info"); let n = 0, fallos = 0;
-  for(const f of files){
-    info.textContent = `Subiendo ${n + 1} de ${files.length}…`;
-    try{
-      const blob = await comprimir(f), path = fotosAlbum + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 6) + ".jpg";
-      if(LIVE) await API.fotosSubir({path, blob});
-      else { const u = URL.createObjectURL(blob); (fotosDemo[fotosAlbum] ||= []).unshift({path, url: u, down: u, size: blob.size}); }
-    }catch(e){ fallos++; }
-    n++;
-  }
-  toast(fallos ? `${n - fallos} subidas, ${fallos} con error` : `${n} foto${n > 1 ? "s" : ""} subida${n > 1 ? "s" : ""}`);
-  cargarFotos();
-}
-
 /* ---------- PDF para compartir (horario y cuadros) ---------- */
 let pdfLibs = null;
 function cargarScript(src){ return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("No se ha podido cargar el generador de PDF. Revisa la conexión.")); document.head.appendChild(s); }); }
@@ -2902,15 +2873,11 @@ document.addEventListener("click", async e => {
     const cambios = {}; document.querySelectorAll("#club-cfg .cl").forEach(el => { cambios[el.dataset.k] = el.value.trim(); });
     b.disabled = true; if(await guardarClub(cambios)) toast("Datos del club guardados"); b.disabled = false;
   }
-  else if(act === "club-quitar" && ADMIN){ if(await guardarClub({[b.dataset.k]: ""})){ renderClubCfg(); toast("Imagen quitada"); } }
+  else if(act === "club-quitar" && ADMIN){ if(await guardarClub({[b.dataset.k]: ""})){ renderClubCfg(); renderHome(); toast("Imagen quitada"); } }
   else if(act === "ir-torneos") $("#lista-torneos").scrollIntoView({behavior: "smooth", block: "start"});
   else if(act === "ins-todo" || act === "ins-nada") document.querySelectorAll(`#insgrid .c[data-d="${b.dataset.d}"]`).forEach(c => c.classList.toggle("on", act === "ins-todo"));
   else if(act === "gsel"){ const k = b.dataset.g; if(!k) gsel.clear(); else if(gsel.has(k)) gsel.delete(k); else gsel.add(k); abrirDiasDelFiltro(); renderAll(); }
   else if(act === "pdf") guardarPDF(b.dataset.what, b);
-  else if(act === "foto-del" && ADMIN){
-    if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "¿Seguro?"; return; }
-    try{ await llamar("fotosBorrar", b.dataset.path); toast("Foto borrada"); cargarFotos(); }catch(err){ toast(msgErr(err)); }
-  }
   else if(act === "cat-lvl" && ADMIN){
     const c = state.config, cat = b.dataset.cat, lv = b.dataset.lv, cur = levelsFor(cat);
     const next = cur.includes(lv) ? cur.filter(x => x !== lv) : c.levels.filter(x => cur.includes(x) || x === lv);
@@ -3041,19 +3008,17 @@ async function onDatesChanged(){
 document.addEventListener("change", async e => {
   if(e.target.name === "i-cat"){ $("#niv-box").innerHTML = nivelesHTML(e.target.value); return; }
   if(e.target.id === "tf-date-from" || e.target.id === "tf-date-to"){ if(ADMIN) cambiarFechas(e.target.id === "tf-date-from" ? "from" : "to", e.target.value); return; }
-  if((e.target.id === "club-portada" || e.target.id === "club-logo") && ADMIN){
+  if(e.target.classList && e.target.classList.contains("club-file") && ADMIN){
     const f = e.target.files && e.target.files[0]; e.target.value = ""; if(!f) return;
-    const k = e.target.id === "club-portada" ? "portada" : "logo";
+    const k = e.target.dataset.k;
     toast("Subiendo imagen…");
     try{
-      const archivo = k === "portada" ? new File([await comprimir(f)], "portada.jpg", {type: "image/jpeg"}) : f;
+      const archivo = k === "logo" ? f : new File([await comprimir(f)], k + ".jpg", {type: "image/jpeg"});
       const url = await subirCartel(archivo);
-      if(await guardarClub({[k]: url})){ renderClubCfg(); toast(k === "portada" ? "Foto de portada guardada" : "Logo guardado"); }
+      if(await guardarClub({[k]: url})){ renderClubCfg(); renderHome(); toast({logo: "Logo guardado", portada: "Foto de portada guardada", caratula: "Carátula guardada"}[k]); }
     }catch(err){ toast("No se ha podido subir: " + msgErr(err)); }
     return;
   }
-  if(e.target.id === "foto-album"){ fotosAlbum = e.target.value; cargarFotos(); return; }
-  if(e.target.id === "foto-file" && ADMIN){ const fs = [...(e.target.files || [])]; e.target.value = ""; if(fs.length) subirFotos(fs); return; }
   if(e.target.closest && e.target.closest("#pack-box") && ADMIN){
     const c = state.config, otro = $("#pk-otro-txt").value.trim();
     c.packOtro = otro;
