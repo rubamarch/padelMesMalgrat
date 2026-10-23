@@ -9,7 +9,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <style>
   /* Layout: cabecera flotante de cristal; portada = rejilla de carteles; torneo = cabecera con cartel + pestañas fijas + contenido */
   :root {
@@ -459,6 +459,16 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   .notice{border-radius:var(--r-md);border-left-width:4px}
   .day{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 18px 12px;box-shadow:var(--shadow-sm)}
   .day h2{font-size:1.25rem;font-weight:800;text-transform:none}
+  details.day{padding:0}
+  details.day > summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;align-items:center;gap:12px;border-radius:var(--r-lg);transition:background-color .3s ease}
+  details.day > summary::-webkit-details-marker{display:none}
+  details.day > summary::before{content:"";flex:none;width:10px;height:10px;border-right:2.5px solid var(--accent);border-bottom:2.5px solid var(--accent);transform:rotate(-45deg);transition:transform .3s ease;margin-right:4px}
+  details.day[open] > summary::before{transform:rotate(45deg)}
+  details.day > summary:hover{background:var(--surface-2)}
+  details.day[open] > summary{border-bottom:1px solid var(--line);border-radius:var(--r-lg) var(--r-lg) 0 0}
+  details.day > :not(summary){margin-inline:18px}
+  details.day > .scroll{margin-block:10px 16px}
+  details.day h2 span b{color:var(--accent)}
   .gcard{border-radius:var(--r-lg);padding:16px 18px;box-shadow:var(--shadow-sm)}
   .gcard h3{font-size:1.05rem;font-weight:800;text-transform:none}
   .ctitle{font-weight:800;font-size:1.4rem;border-radius:var(--r-md)}
@@ -471,6 +481,12 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   .mrow{border-radius:var(--r-md)}
   .mrow b{font-weight:800}
   label.f input,label.f select,.dayrow select,.dayrow input[type=time]{border-radius:10px}
+  details.fold > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px}
+  details.fold > summary::-webkit-details-marker{display:none}
+  details.fold > summary::after{content:"Mostrar";margin-left:auto;font-size:13px;font-weight:700;color:var(--accent);padding:7px 12px;border-radius:999px;background:var(--accent-soft)}
+  details.fold[open] > summary::after{content:"Ocultar"}
+  details.fold .fold-body{display:grid;gap:14px}
+  details.fold h2 .st{vertical-align:middle;margin-left:6px}
   .subsec{display:grid;gap:12px;padding:16px;border:1px solid var(--line);border-radius:var(--r-md)}
   .subsec h3{font-size:1rem;font-weight:800;text-transform:none}
   #insgrid{touch-action:pan-x pan-y}
@@ -485,6 +501,76 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   #insgrid td.d .tn button:last-child{color:var(--muted)}
   .desliza{display:none;font-size:12px;color:var(--muted);margin:0}
   @media (max-width:600px){.desliza{display:block}}
+  /* ===================== identidad Padel Mes Malgrat ===================== */
+  :root { --night: #0a1122; --night-2: #12203f; --ball: #e2f23b; --ball-ink: #1a2200; --display2: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif; }
+  .brand span { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; font-size: 1.3rem; letter-spacing: .02em; }
+  .logo { background: radial-gradient(circle at 35% 30%, #f4ff8a, var(--ball) 55%, #b8c614); color: var(--ball-ink); box-shadow: 0 6px 18px -6px rgba(226, 242, 59, .7); }
+  .hero { position: relative; overflow: hidden; isolation: isolate; border-radius: 28px; margin-top: 6px; padding: 0; gap: 0; color: #fff;
+    background: radial-gradient(120% 150% at 92% -10%, #2350c9 0%, #16306f 30%, var(--night) 62%); box-shadow: 0 30px 60px -30px rgba(10, 17, 34, .7); }
+  .hero::before { content: ""; position: absolute; z-index: -1; right: -6%; bottom: -46%; width: 64%; height: 150%; border: 2px solid rgba(255,255,255,.16);
+    transform: perspective(700px) rotateX(58deg) rotateZ(-8deg); transform-origin: bottom;
+    background: linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,.16)) 50% 0 / 2px 100% no-repeat,
+                linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,.16)) 0 50% / 100% 2px no-repeat,
+                linear-gradient(rgba(255,255,255,.1), rgba(255,255,255,.1)) 0 25% / 100% 2px no-repeat,
+                linear-gradient(rgba(255,255,255,.1), rgba(255,255,255,.1)) 0 75% / 100% 2px no-repeat; }
+  .hero-ball { position: absolute; z-index: -1; right: 9%; top: 14%; width: clamp(90px, 16vw, 170px); aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, #f6ff9a 0%, var(--ball) 45%, #a7b40f 100%); box-shadow: 0 30px 50px -10px rgba(0,0,0,.55), inset -10px -14px 24px rgba(0,0,0,.18);
+    animation: bote 5s ease-in-out infinite; }
+  .hero-ball::before, .hero-ball::after { content: ""; position: absolute; inset: 9%; border-radius: 50%; border: 3px solid rgba(255,255,255,.85); clip-path: inset(0 55% 0 0); }
+  .hero-ball::after { clip-path: inset(0 0 0 55%); }
+  @keyframes bote { 50% { transform: translateY(-14px) rotate(14deg); } }
+  .hero-in { display: grid; gap: 14px; padding: 52px clamp(22px, 5vw, 56px) 34px; max-width: 760px; }
+  .hero .eyebrow-pill { background: rgba(255,255,255,.1); color: var(--ball); border: 1px solid rgba(226,242,59,.3); }
+  .hero h1 { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; color: #fff;
+    font-size: clamp(3.2rem, 11vw, 7rem); line-height: .86; letter-spacing: .005em; }
+  .hero h1 span { display: block; }
+  .hero h1 em { display: block; color: var(--ball); font-style: italic; text-shadow: 0 6px 30px rgba(226,242,59,.25); }
+  .hero .hero-by { margin: 0; font-family: var(--display2); font-weight: 700; font-size: clamp(1.1rem, 2.4vw, 1.5rem); letter-spacing: .32em; text-transform: uppercase; color: rgba(255,255,255,.78); }
+  .hero .hero-by:empty { display: none; }
+  .hero .hero-lead { margin: 4px 0 0; color: rgba(255,255,255,.78); font-size: 1.05rem; max-width: 46ch; }
+  .hero-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .b-ball { background: var(--ball); color: var(--ball-ink); font-weight: 800; box-shadow: 0 12px 30px -10px rgba(226,242,59,.65); }
+  .b-ball:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -10px rgba(226,242,59,.8); }
+  .hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); }
+  .hstat { padding: 18px clamp(16px, 4vw, 40px); display: grid; gap: 2px; border-left: 1px solid rgba(255,255,255,.1); }
+  .hstat:first-child { border-left: 0; }
+  .hstat b { font-family: var(--display2); font-weight: 800; font-style: italic; font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1; color: #fff; }
+  .hstat span { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+  .sec-title { display: flex; align-items: center; gap: 16px; margin: 40px 0 18px; scroll-margin-top: 90px; }
+  .sec-title h2 { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1; }
+  .sec-line { flex: 1; height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--ball), var(--accent) 40%, transparent); }
+  .tcard { border-radius: 22px; }
+  .tcard h3 { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; font-size: 1.75rem; line-height: .95; letter-spacing: .01em; }
+  .tdate { font-family: var(--display2); font-size: 1rem; font-weight: 700; letter-spacing: .06em; }
+  .cta { font-family: var(--display2); font-size: 1.1rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+  .pgen strong { font-family: var(--display2); font-style: italic; text-transform: uppercase; font-size: 2.3rem; line-height: .92; }
+  .pgen small { color: var(--ball); opacity: 1; }
+  .pg0 { background: radial-gradient(130% 120% at 90% 0%, #2a5bd8 0%, #12245a 45%, var(--night) 80%); }
+  .pg1 { background: radial-gradient(130% 120% at 90% 0%, #0f9f8f 0%, #0d3b52 45%, var(--night) 80%); }
+  .pg2 { background: radial-gradient(130% 120% at 90% 0%, #c0267a 0%, #43195a 45%, var(--night) 80%); }
+  .pg3 { background: radial-gradient(130% 120% at 90% 0%, #e0731a 0%, #5a2a1c 45%, var(--night) 80%); }
+  .pgen::after { background: radial-gradient(circle at 34% 30%, #f6ff9a, var(--ball) 50%, #a7b40f); }
+  .filtro[aria-pressed="true"] { background: var(--night); border-color: var(--night); color: #fff; }
+  .thero { border-radius: 26px; }
+  .thero::after { background: linear-gradient(180deg, rgba(10,17,34,.25), rgba(10,17,34,.9)); }
+  .thero h1 { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; font-size: clamp(2.6rem, 8vw, 5rem); line-height: .9; }
+  .kpi b { font-family: var(--display2); font-style: italic; font-size: 1.9rem; }
+  .tab { font-family: var(--display2); font-size: 1.12rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+  .tab[aria-selected="true"] { background: var(--night); color: #fff; }
+  .tab.admin-tab[aria-selected="true"] { background: var(--warn); color: #fff; }
+  .card h2, .panel > h2, .gcard h3, .day h2, .ok-box h2, .modal h2 { font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; letter-spacing: .01em; }
+  .card h2 { font-size: 1.55rem; line-height: 1; }
+  .day h2 { font-size: 1.5rem; }
+  .day h2 span { font-family: var(--font); font-style: normal; text-transform: none; font-weight: 500; }
+  .ctitle { font-family: var(--display2); font-style: italic; }
+  .pie { padding-block: 40px 12px; }
+  .pie-in { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 26px 30px; border-radius: 24px;
+    color: #fff; background: radial-gradient(120% 200% at 100% 0%, #16306f 0%, var(--night) 60%); }
+  .pie-club { display: block; font-family: var(--display2); font-weight: 800; font-style: italic; text-transform: uppercase; font-size: 1.9rem; line-height: 1; }
+  .pie-by { font-family: var(--display2); font-weight: 700; letter-spacing: .3em; text-transform: uppercase; color: var(--ball); font-size: .95rem; }
+  .pie .link { color: rgba(255,255,255,.7); }
+  .pie .link:hover { color: #fff; }
+  @media (max-width: 560px) { .hero-in { padding-top: 38px; } .hstat span { font-size: 10.5px; letter-spacing: .04em; } .hero-ball { right: -6%; top: 6%; opacity: .9; } }
   /* filtros de categoría */
   .gfil{gap:8px}
   .gfil .chip{border:2px solid transparent;cursor:pointer;padding:6px 12px;font-size:.85rem;font-family:var(--font);opacity:.5;transition:all .3s ease}
@@ -493,7 +579,16 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   .gfil .chip:hover{opacity:1}
   .gfil .gall{background:var(--surface-2);color:var(--ink-strong)}
   .pdf .scroll{overflow:visible!important}
-  .pdf table.grid,.pdf table.cross{min-width:0!important}
+  .pdf table.grid{min-width:0!important}
+  table.cross{table-layout:fixed;border-radius:0}
+  table.cross th,table.cross td{height:42px;padding:3px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  table.cross .gname{font-size:1rem}
+  table.cross .rowh b{overflow:hidden;text-overflow:ellipsis;font-size:.88rem}
+  table.cross .colh{font-size:.8rem;overflow:hidden;text-overflow:ellipsis}
+  table.cross td b{font-size:.82rem;line-height:1.15}
+  table.cross td span{font-size:.68rem;line-height:1.15}
+  .cuadro{gap:10px}
+  .cuadro .ctitle{font-size:1.15rem;padding:6px 12px}
   .pdf .cell.dim{visibility:hidden}
   /* editor por horas */
   .avail .c{width:34px}
@@ -563,10 +658,17 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   <!-- Portada -->
   <section id="home">
     <div class="hero">
-      <span class="eyebrow-pill" id="hero-eyebrow">Temporada 2026</span>
-      <h1>Torneos del <span class="grad">club</span></h1>
-      <p>Consulta los torneos, apúntate con tu pareja y sigue los horarios y cuadros cuando empiece la competición.</p>
+      <div class="hero-ball" aria-hidden="true"></div>
+      <div class="hero-in">
+        <span class="eyebrow-pill" id="hero-eyebrow">Torneos del club</span>
+        <h1 id="hero-title"><span>Padel Mes</span> <em>Malgrat</em></h1>
+        <p class="hero-by" id="hero-by"></p>
+        <p class="hero-lead">Apúntate a los torneos, consulta horarios y cuadros y sigue la competición desde el móvil.</p>
+        <div class="hero-cta"><button type="button" class="b b-ball b-lg" data-act="ir-torneos">Ver torneos <span class="flecha">→</span></button></div>
+      </div>
+      <div class="hero-stats" id="hero-stats"></div>
     </div>
+    <div class="sec-title" id="lista-torneos"><h2>Torneos</h2><span class="sec-line" aria-hidden="true"></span></div>
     <div id="demo" class="demo" hidden>
       <span aria-hidden="true">ℹ︎</span>
       <span>Vista de ejemplo con torneos y parejas inventados. Las inscripciones no se guardan. Para probar el modo organizador entra con cualquier correo y la contraseña <b>1234</b>.</span>
@@ -598,7 +700,12 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
     </section>
   </section>
 
-  <footer class="pie"><button type="button" class="link" id="acceso">Acceso organizador</button></footer>
+  <footer class="pie">
+    <div class="pie-in">
+      <div><b class="pie-club" id="pie-club">Padel Mes Malgrat</b><span class="pie-by" id="pie-by"></span></div>
+      <button type="button" class="link" id="acceso">Acceso organizador</button>
+    </div>
+  </footer>
 </main>
 
 <div class="modal" id="modal-pin" hidden>
@@ -843,7 +950,19 @@ function rowsToPairs(rows){
   return {items, warn};
 }
 
-let cuadroFilter = "", gsel = new Set();
+let cuadroFilter = "", gsel = new Set(), diasAbiertos = new Set();
+function abrirDiasDelFiltro(){
+  diasAbiertos = new Set();
+  if(!gsel.size || !state.schedule) return;
+  state.schedule.matches.forEach(m => { if(gsel.has(m.g)) diasAbiertos.add(m.day); });
+  finalsPlan().placed.forEach(m => { if(gsel.has(m.g)) diasAbiertos.add(m.day); });
+}
+document.addEventListener("toggle", e => {
+  const el = e.target;
+  if(el.matches && el.matches("details.day")){ if(el.open) diasAbiertos.add(el.dataset.day); else diasAbiertos.delete(el.dataset.day); }
+  if(el.id === "fold-ins") insAbierto = el.open;
+}, true);
+let insAbierto = false;
 let state, tab = "horario", selected = null, filter = "", editing = null, focusPair = "", importPreview = null;
 let db = null, downloads = null, saveTimer = null, writing = false, pendingWrite = false, touched = false;
 /* ---------- groups, pairs, slots ---------- */
@@ -1285,7 +1404,7 @@ function renderHorario(){
     if(!d.on){
       const fp = d === finalsDay() ? finalsPlan() : null, fs = []; for(let t = d.start; t + cfg.duration <= d.end; t += cfg.duration) fs.push(t);
       const fc = {}; (fp ? fp.placed : []).forEach(m => fc[m.start + "#" + m.court] = m);
-      h += `<section class="day"><h2>${esc(d.name)} <span>${fmt(d.start)}–${fmt(d.end)} · fases finales · ${fp ? fp.placed.length : 0} partidos en ${fs.length*cfg.courts.length} huecos</span></h2>`;
+      h += `<details class="day" data-day="${d.id}"${diasAbiertos.has(d.id) ? " open" : ""}><summary><h2>${esc(d.name)} <span>${fmt(d.start)}–${fmt(d.end)} · fases finales · ${fp ? fp.placed.length : 0} partidos${gsel.size ? ` · <b>${fp ? fp.placed.filter(m => matchVisible(m)).length : 0} de tu filtro</b>` : ""}</span></h2></summary>`;
       if(fp && fp.left.length) h += `<div class="notice warn"><span><b>No caben ${fp.left.length} partido${fp.left.length>1?"s":""} de fase final</b> (${esc(fp.left.map(m => groupOf(m.g).short + " " + m.name).join(", "))}). Amplía el horario del ${esc(d.name.toLowerCase())} o pon más niveles a «Solo final» en Ajustes.</span></div>`;
       h += `<div class="scroll"><table class="grid"><thead><tr><th></th>${cfg.courts.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>`;
       fs.forEach(t => { h += `<tr><td class="time">${fmt(t)}<small>a ${fmt(t+cfg.duration)}</small></td>${cfg.courts.map((c, ci) => {
@@ -1294,13 +1413,14 @@ function renderHorario(){
         const g = groupOf(m.g);
         return `<td><div class="cell ${g.cls}${!matchVisible(m) ? " dim" : ""}" style="cursor:default" title="${m.early ? "Se juega antes de que acaben sus semifinales" : ""}"><span class="tag">${esc(g.short)} · ${esc(m.name.toUpperCase())}${m.early ? `<span class="iss">!</span>` : ""}</span><span class="vs">${esc(m.a)}<br><i>vs</i> ${esc(m.b)}</span></div></td>`;
       }).join("")}</tr>`; });
-      h += `</tbody></table></div></section>`;
+      h += `</tbody></table></div></details>`;
       return;
     }
     const ds = slots.filter(s => s.day === d.id);
     const count = sch.matches.filter(m => m.day === d.id).length;
-    h += `<section class="day"><h2>${esc(d.name)} <span>${fmt(d.start)}–${fmt(d.end)} · ${count} de ${ds.length*cfg.courts.length} huecos ocupados</span></h2>`;
-    if(!ds.length){ h += `<p class="muted small">No cabe ningún partido de ${cfg.duration} min en este horario.</p></section>`; return; }
+    const nVis = sch.matches.filter(m => m.day === d.id && matchVisible(m)).length;
+    h += `<details class="day" data-day="${d.id}"${diasAbiertos.has(d.id) ? " open" : ""}><summary><h2>${esc(d.name)} <span>${fmt(d.start)}–${fmt(d.end)} · ${count} partido${count === 1 ? "" : "s"}${gsel.size ? ` · <b>${nVis} de tu filtro</b>` : ""}</span></h2></summary>`;
+    if(!ds.length){ h += `<p class="muted small">No cabe ningún partido de ${cfg.duration} min en este horario.</p></details>`; return; }
     h += `<div class="scroll"><table class="grid"><thead><tr><th></th>${cfg.courts.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>`;
     ds.forEach(s => {
       h += `<tr><td class="time">${fmt(s.start)}<small>a ${fmt(s.end)}</small></td>`;
@@ -1325,7 +1445,7 @@ function renderHorario(){
       });
       h += `</tr>`;
     });
-    h += `</tbody></table></div></section>`;
+    h += `</tbody></table></div></details>`;
   });
 
   if(ADMIN || sch.unscheduled.length) h += `<section class="view" style="gap:8px"><h2 style="font-size:1.4rem;text-transform:uppercase">Sin programar <span class="muted" style="font-family:var(--body);font-size:.9rem;text-transform:none">${sch.unscheduled.length}</span></h2>`;
@@ -1382,7 +1502,7 @@ function commonText(a, b){
 function renderCuadros(){
   const el = $("#v-cuadros"), cfg = state.config, sch = state.schedule, gs = groups();
   const issues = validateAll(), fplan = finalsPlan();
-  let h = `<div class="row"><span class="spacer"></span><button class="btn" data-act="pdf" data-what="cuadros">Descargar PDF</button></div>${gchips(gs)}`;
+  let h = `<div class="row"><span class="spacer"></span>${ADMIN ? `<button class="btn" data-act="export-csv">Descargar CSV</button><button class="btn" data-act="copy-sheet">Copiar para Excel</button>` : ""}<button class="btn" data-act="pdf" data-what="cuadros">Descargar PDF</button></div>${gchips(gs)}`;
   if(!sch) h += `<div class="notice"><span>Genera el horario para ver las horas en los cuadros.</span></div>`;
   gs.filter(g => !gsel.size || gsel.has(g.key)).forEach(g => {
     const ps = state.pairs.filter(p => gkey(p) === g.key); if(!ps.length) return;
@@ -1391,9 +1511,9 @@ function renderCuadros(){
     for(let i = 1; i <= k; i++){
       const list = cfg.subSize ? ps.filter(p => subOf(p) === i) : ps;
       if(!list.length) continue;
-      h += `<div class="scroll"><table class="cross"><thead><tr><th class="gname s${(i-1)%4}">GRUPO ${i}</th>${list.map(p => `<th class="colh">${esc(pname(p))}</th>`).join("")}</tr></thead><tbody>`;
+      h += `<div class="scroll"><table class="cross" style="width:${200 + 112 * list.length}px"><colgroup><col style="width:200px">${list.map(() => `<col style="width:112px">`).join("")}</colgroup><thead><tr><th class="gname s${(i-1)%4}">GRUPO ${i}</th>${list.map(p => `<th class="colh" title="${esc(pname(p))}">${esc(pshort(p))}</th>`).join("")}</tr></thead><tbody>`;
       list.forEach(p => {
-        h += `<tr><th class="rowh"><b>${esc(pname(p))}</b></th>`;
+        h += `<tr><th class="rowh" title="${esc(pname(p))}"><b>${esc(pname(p))}</b></th>`;
         list.forEach(q => {
           if(p === q){ h += `<td class="diag"></td>`; return; }
           const m = sch && sch.matches.find(x => (x.a === p.id && x.b === q.id) || (x.a === q.id && x.b === p.id));
@@ -1402,7 +1522,7 @@ function renderCuadros(){
           const tip = `Coinciden: ${common || "nunca"}`;
           if(m){
             const iss = issues[m.id];
-            h += `<td class="${iss ? "warn" : ""}" title="${esc(tip + (iss ? "\n" + iss.join("\n") : ""))}"><b>${esc(dayById(m.day) ? dayById(m.day).name : m.day)} ${hfmt(m.start)}</b><span>${esc(cfg.courts[m.court] || "")}${iss ? " · fuera de su horario" : ""}</span></td>`;
+            h += `<td class="${iss ? "warn" : ""}" title="${esc(tip + (iss ? "\n" + iss.join("\n") : ""))}"><b>${esc(dayById(m.day) ? dshort(dayById(m.day)) : m.day)} ${hfmt(m.start)}</b><span>${esc(cfg.courts[m.court] || "")}${iss ? " · fuera de su horario" : ""}</span></td>`;
           } else if(u){
             h += `<td class="none" title="${esc(tip)}"><b>Sin hora</b><span>${common ? "Coinciden " + esc(common) + ", pero no queda pista" : "No coinciden nunca"}</span></td>`;
           } else h += `<td class="muted">–</td>`;
@@ -1821,11 +1941,11 @@ function applyConfigChange(e){
 }
 function scheduleRows(){
   const sch = state.schedule, cfg = state.config, order = Object.fromEntries(cfg.days.map((d,i) => [d.id, i]));
-  return sch.matches.filter(m => pairById(m.a) && pairById(m.b))
+  return sch.matches.filter(m => pairById(m.a) && pairById(m.b) && matchVisible(m))
     .sort((x,y) => (order[x.day]-order[y.day]) || (x.start-y.start) || (x.court-y.court))
     .map(m => { const g = groupOf(m.g) || {cat: m.g.split("|")[0], level: m.g.split("|")[1]};
       return [dayById(m.day).name, fmt(m.start), fmt(m.start + cfg.duration), cfg.courts[m.court] || "", g.cat, g.level, m.sub ? String(m.sub) : "", pname(pairById(m.a)), pname(pairById(m.b))]; })
-    .concat(finalsPlan().placed.sort((x,y) => (x.start-y.start) || (x.court-y.court)).map(m => { const g = groupOf(m.g);
+    .concat(finalsPlan().placed.filter(m => matchVisible(m)).sort((x,y) => (x.start-y.start) || (x.court-y.court)).map(m => { const g = groupOf(m.g);
       return [dayById(m.day).name, fmt(m.start), fmt(m.start + cfg.duration), cfg.courts[m.court] || "", g.cat, g.level, m.name, m.a, m.b]; }));
 }
 const HEAD = ["Día","Inicio","Fin","Pista","Categoría","Nivel","Subgrupo","Pareja 1","Pareja 2"];
@@ -2114,7 +2234,14 @@ function copiarEnlace(id){
 }
 
 /* ---------- portada ---------- */
+function renderHeroStats(){
+  const n = k => torneos.filter(t => t.estado === k).length;
+  const parejas = torneos.reduce((a, t) => a + (t.estado === "juego" || t.estado === "finalizado" ? (t.parejas || t.inscritas || 0) : (t.inscritas || 0)), 0);
+  $("#hero-stats").innerHTML = [[n("abierta"), "inscripción abierta"], [n("juego"), "en juego"], [parejas, "parejas inscritas"]]
+    .map(([v, l]) => `<div class="hstat"><b>${v}</b><span>${l}</span></div>`).join("");
+}
 function renderHome(){
+  renderHeroStats();
   $("#homeseg").hidden = !ADMIN; if(!ADMIN) homeVista = "torneos";
   document.querySelectorAll("#homeseg .tab").forEach(b => b.setAttribute("aria-selected", b.dataset.hv === homeVista));
   const vf = homeVista === "fotos";
@@ -2233,7 +2360,7 @@ async function guardarPDF(what, btn){
     let primera = true;
     for(const el of blocks){
       const canvas = await html2canvas(el, {scale: 2, backgroundColor: "#ffffff", windowWidth: 1280, logging: false,
-        onclone: doc => { doc.documentElement.setAttribute("data-theme", "light"); doc.body.classList.add("pdf"); }});
+        onclone: doc => { doc.documentElement.setAttribute("data-theme", "light"); doc.body.classList.add("pdf"); doc.querySelectorAll("details").forEach(x => { x.open = true; }); }});
       const iw = W - 2 * M, ih = canvas.height * iw / canvas.width;
       for(let y = 0; y < ih - 0.5; y += alto){
         if(!primera) pdf.addPage(); primera = false;
@@ -2608,9 +2735,10 @@ function renderConfig(){
         <input class="in" id="pk-otro-txt" style="width:auto;min-width:180px" placeholder="Gorra, bolsa, toalla…" value="${esc(otro)}" aria-label="Nombre del otro artículo"></div>
       ${Object.keys(totales).length ? `<div class="resumen-pack">${Object.entries(totales).map(([n, ts]) => `<span class="tag-chip"><b>${esc(n)}</b>: ${TALLAS.filter(t => ts[t]).map(t => `${t} ×${ts[t]}`).join(" · ")}</span>`).join("")}</div>` : ""}
     </div>
-    <div class="card"><div class="card-h"><div><h2>Inscripciones <span class="muted" style="font-weight:600">${inscripciones.length}</span></h2>
+    <details class="card fold" id="fold-ins"${insAbierto ? " open" : ""}><summary class="card-h"><div><h2>Inscripciones <span class="muted" style="font-weight:600">${inscripciones.length}</span>${pagadas ? ` <span class="st dentro">${pagadas} pagada${pagadas > 1 ? "s" : ""}</span>` : ""}${nuevas.length ? ` <span class="st nuevo">${nuevas.length} nueva${nuevas.length > 1 ? "s" : ""}</span>` : ""}</h2>
         <p class="lead">${nuevas.length ? `${nuevas.length} pareja${nuevas.length > 1 ? "s" : ""} todavía no está${nuevas.length > 1 ? "n" : ""} en el cuadrante.` : inscripciones.length ? "Todas las inscripciones están en el cuadrante." : "Aún no se ha inscrito nadie."}</p></div>
-        ${nuevas.length ? `<button type="button" class="b b-primary" data-act="ins-a-cuadrante">Pasar ${nuevas.length} al cuadrante</button>` : ""}</div>
+</summary>
+      <div class="fold-body">${nuevas.length ? `<div>` + `<button type="button" class="b b-primary" data-act="ins-a-cuadrante">Pasar ${nuevas.length} al cuadrante</button>` + `</div>` : ""}
       ${inscripciones.length ? `<p class="lead small" style="margin:0">Pagadas: <b>${pagadas}</b> de ${inscripciones.length}</p><div class="tscroll"><table class="ins"><thead><tr><th>Pareja</th><th>Grupo</th><th>Disponibilidad</th><th>Contacto y extras</th><th>Tallas</th><th>Pagado</th><th></th><th></th></tr></thead><tbody>
         ${inscripciones.map(r => `<tr><td><b>${esc(r.jugador)} / ${esc(r.companero)}</b><small>${esc(fecha(r.fecha))}</small></td><td>${esc(r.categoria)} ${esc(r.nivel)}</td><td>${esc(dispTxt(r))}</td>
           <td>${esc(r.telefono || "—")}${r.extras ? `<small>${esc(r.extras)}</small>` : ""}</td>
@@ -2620,9 +2748,9 @@ function renderConfig(){
           <td><button type="button" class="b b-ghost" style="padding:6px 10px;color:var(--bad)" data-act="borrar-ins" data-id="${esc(r.clave)}" title="Borrar inscripción">Borrar</button></td></tr>`).join("")}
       </tbody></table></div>` : ""}
       <p class="lead small" style="margin:0">Al pasarlas se crean como parejas con su disponibilidad. Puedes revisarlas en <b>Parejas</b>.</p>
-    </div>
+    </div></details>
     ${tarjetaHorario(nuevas.length)}
-    <div><h2 style="font-size:1.2rem;font-weight:800">Ajustes del cuadrante</h2></div>`;
+    <div class="sec-title" style="margin:18px 0 0"><h2>Ajustes del cuadrante</h2><span class="sec-line" aria-hidden="true"></span></div>`;
   renderAjustes();
 }
 
@@ -2670,8 +2798,9 @@ document.addEventListener("click", async e => {
   const b = e.target.closest("[data-act]"); if(!b) return;
   const act = b.dataset.act;
   if(act === "reload") cargarTorneos();
+  else if(act === "ir-torneos") $("#lista-torneos").scrollIntoView({behavior: "smooth", block: "start"});
   else if(act === "ins-todo" || act === "ins-nada") document.querySelectorAll(`#insgrid .c[data-d="${b.dataset.d}"]`).forEach(c => c.classList.toggle("on", act === "ins-todo"));
-  else if(act === "gsel"){ const k = b.dataset.g; if(!k) gsel.clear(); else if(gsel.has(k)) gsel.delete(k); else gsel.add(k); renderAll(); }
+  else if(act === "gsel"){ const k = b.dataset.g; if(!k) gsel.clear(); else if(gsel.has(k)) gsel.delete(k); else gsel.add(k); abrirDiasDelFiltro(); renderAll(); }
   else if(act === "pdf") guardarPDF(b.dataset.what, b);
   else if(act === "foto-del" && ADMIN){
     if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "¿Seguro?"; return; }
@@ -2843,7 +2972,10 @@ document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#modal-
 /* ---------- arranque ---------- */
 (async function boot(){
   $("#club").textContent = CLUB;
-  $("#hero-eyebrow").textContent = CLUB;
+  const pal = CLUB.trim().split(/\s+/), ult = pal.length > 1 ? pal.pop() : "";
+  $("#hero-title").innerHTML = `<span>${esc(pal.join(" "))}</span>${ult ? ` <em>${esc(ult)}</em>` : ""}`;
+  $("#hero-by").textContent = APP.tagline || ""; $("#pie-by").textContent = APP.tagline || ""; $("#pie-club").textContent = CLUB;
+  document.title = "Torneos · " + CLUB + (APP.tagline ? " " + APP.tagline : "");
   $("#nav-torneos").hidden = true;
   if(!LIVE) $("#demo").hidden = false;
   try{ if(await llamar("adminSesion")) ADMIN = true; }catch(e){}
