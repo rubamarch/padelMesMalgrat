@@ -384,6 +384,8 @@ table.grid td.time small{display:block;font-family:var(--body);font-size:.72rem;
 .pin{font-size:.7rem;font-weight:600;opacity:.7}
 .selbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ink);color:var(--bg);border-radius:var(--r);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .selbar .btn{background:transparent;color:inherit;border-color:rgba(255,255,255,.35)}
+.selacc{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;display:flex;gap:8px;padding:8px;border-radius:999px;background:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.selacc .btn{background:transparent;color:var(--bg);border-color:rgba(255,255,255,.35)}
 .ulist{display:flex;flex-direction:column;gap:6px}
 .uitem{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer;text-align:left;width:100%}
 .uitem.sel{outline:3px solid var(--ball)}
@@ -1594,22 +1596,10 @@ function renderHorario(){
 
   const selF = selected && selected.kind === "f" ? finalsPlan().placed.find(m => m.id === selected.id) : null;
   if(selected && selected.kind === "f" && !selF) selected = null;
-  if(selF){
-    const g = groupOf(selF.g);
-    h += `<div class="selbar"><span><b>${esc(g.short)} · ${esc(selF.name)}</b> <span class="chip ${g.cls}">${esc(selF.a)} vs ${esc(selF.b)}</span></span>
-      <span class="small">Toca una celda libre de la fase final o otro partido para intercambiarlos.</span><span class="spacer"></span>
-      ${selF.fixed ? `<button class="btn sm" data-act="funpin">Soltar (colocación automática)</button>` : ""}
-      <button class="btn sm" data-act="deselect">Cancelar</button></div>`;
-  }
-  if(selM){
-    const g = groupOf(selM.g);
-    h += `<div class="selbar"><span><b>${esc(pshort(pairById(selM.a)))} vs ${esc(pshort(pairById(selM.b)))}</b> ${g?`<span class="chip ${g.cls}">${esc(mlabel(selM))}</span>`:""}</span>
-      <span class="small">Toca una celda libre (en amarillo si les va bien a las dos) o otro partido para intercambiar.</span>
-      ${(issues[selM.id]||[]).length ? `<span class="small">⚠ ${esc(issues[selM.id].join(" · "))}</span>` : ""}
-      <span class="spacer"></span>
-      ${selected.kind==="s" ? `<button class="btn sm" data-act="unschedule">Quitar del horario</button>${selM.pinned?`<button class="btn sm" data-act="unpin">Soltar</button>`:""}` : ""}
-      <button class="btn sm" data-act="deselect">Cancelar</button></div>`;
-  }
+  /* acciones del partido seleccionado: barra flotante abajo, para que el horario no se mueva */
+  const acc = selF && selF.fixed ? `<button class="btn sm" data-act="funpin">Soltar (colocación automática)</button>`
+    : selM && selected.kind === "s" ? `<button class="btn sm" data-act="unschedule">Quitar del horario</button>${selM.pinned ? `<button class="btn sm" data-act="unpin">Soltar</button>` : ""}` : "";
+  if(acc) h += `<div class="selacc">${acc}</div>`;
 
   cfg.days.filter(d => d.on || d.finals).forEach(d => {
     if(!d.on){
