@@ -472,7 +472,8 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
 .mlist{display:flex;flex-direction:column;gap:8px}
 .mrow{display:grid;grid-template-columns:120px 90px 1fr;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;align-items:baseline}
 .mrow b{font-family:var(--display);font-size:1.1rem}
-@media (max-width:560px){.mrow{grid-template-columns:1fr 1fr}.mrow>:last-child{grid-column:1/-1}.top h1{font-size:1.7rem}}
+.mrow .ds{display:none}
+@media (max-width:560px){.mrow{grid-template-columns:max-content max-content minmax(0,1fr);gap:6px;padding:7px 8px;font-size:.72rem;align-items:center}.mrow b{font-size:.84rem;white-space:nowrap}.mrow>:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mrow>:last-child b{font-size:.78rem!important;font-weight:600}.mrow .dl{display:none}.mrow .ds{display:inline}.top h1{font-size:1.7rem}}
 
 /* settings */
 .days{display:flex;flex-direction:column;gap:8px}
@@ -721,9 +722,8 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   @media (max-width: 640px) {
     .gfil-m { display: block; width: 100%; }
     .gfil { display: none; }
-    .tabs-in { flex-wrap: wrap; overflow: visible; justify-content: center; border-radius: 20px; gap: 2px; padding: 4px; }
-    .tab { padding: 7px 11px; font-size: 13px; }
-    .sync { flex-basis: 100%; text-align: center; margin: 0; padding: 0 0 2px; font-size: 11px; }
+    .tabs-in { scrollbar-width: none; }
+    .tabs-in::-webkit-scrollbar { display: none; }
     .scroll { overflow-x: visible; }
     table.grid { min-width: 0; table-layout: fixed; border-spacing: 3px; }
     table.grid th { font-size: .66rem; padding: 2px 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -740,8 +740,10 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
     table.cross.compacto tr { height: 38px; }
     table.cross.compacto .colh { font-size: .72rem; text-align: center; }
     table.cross.compacto .gname { font-size: .74rem; }
-    table.cross.compacto td b { font-size: .64rem; }
+    table.cross.compacto td b { font-size: .74rem; line-height: 1.15; }
     table.cross.compacto td span { font-size: .56rem; }
+    .cnote-mas { display: none; }
+    .cnote { font-size: .85rem; }
     table.cross .num { font-weight: 800; margin-right: 3px; color: var(--muted); }
     .avail { overflow: visible; }
     .avail table { width: 100%; table-layout: fixed; border-spacing: 1px; }
@@ -1971,9 +1973,11 @@ function renderCuadros(){
           const tip = `Coinciden: ${common || "nunca"}`;
           if(m){
             const iss = issues[m.id];
-            h += `<td class="${iss ? "warn" : ""}" title="${esc(tip + (iss ? "\n" + iss.join("\n") : ""))}"><b>${esc(dayById(m.day) ? dshort(dayById(m.day)) : m.day)} ${hfmt(m.start)}</b><span>${esc(cfg.courts[m.court] || "")}${iss ? " · fuera de su horario" : ""}</span></td>`;
+            const dia = esc(dayById(m.day) ? dshort(dayById(m.day)) : m.day);
+            h += compacto ? `<td class="${iss ? "warn" : ""}" title="${esc(tip + (iss ? "\n" + iss.join("\n") : ""))}"><b>${dia}</b><b>${hfmt(m.start)}</b></td>`
+              : `<td class="${iss ? "warn" : ""}" title="${esc(tip + (iss ? "\n" + iss.join("\n") : ""))}"><b>${dia} ${hfmt(m.start)}</b><span>${esc(cfg.courts[m.court] || "")}${iss ? " · fuera de su horario" : ""}</span></td>`;
           } else if(u){
-            h += `<td class="none" title="${esc(tip)}"><b>Sin hora</b><span>${common ? "Coinciden " + esc(common) + ", pero no queda pista" : "No coinciden"}</span></td>`;
+            h += compacto ? `<td class="none" title="${esc(tip)}"><b>Sin</b><b>hora</b></td>` : `<td class="none" title="${esc(tip)}"><b>Sin hora</b><span>${common ? "Coinciden " + esc(common) + ", pero no queda pista" : "No coinciden"}</span></td>`;
           } else h += `<td class="muted">–</td>`;
         });
         h += `</tr>`;
@@ -1984,11 +1988,11 @@ function renderCuadros(){
     if(fm.length){
       const when = m => `${fmt(m.start)} (${cfg.courts[m.court] || ""})`;
       const qf = fm.filter(m => m.kind === "qf"), sf = fm.filter(m => m.kind === "sf"), fi = fm.find(m => m.kind === "f");
-      let t = qualifyText(k, finalsFmt(g.level)) + " ";
+      const t0 = qualifyText(k, finalsFmt(g.level)); let t = "";
       if(qf.length) t += qf.map(m => `${m.name}: ${m.a} vs ${m.b}, ${when(m)}`).join(". ") + ". ";
       if(sf.length) t += sf.map(m => `${m.name}: ${m.a} vs ${m.b}, ${when(m)}`).join(". ") + ". ";
       if(fi) t += `Final: ${fi.a} vs ${fi.b}, ${fplan.day.name.toLowerCase()} a las ${when(fi)}.`;
-      h += `<div class="cnote">${esc(t)}</div>`;
+      h += `<div class="cnote">${esc(t0)}<span class="cnote-mas"> ${esc(t)}</span></div>`;
     }
     if(cfg.note) h += `<div class="cnote">${esc(cfg.note).replace(/\n/g, "<br>")}</div>`;
     h += `</section>`;
@@ -2268,7 +2272,7 @@ function renderPareja(){
   else {
     h += `<div class="mlist">`;
     sched.forEach(m => { const o = pairById(m.a === p.id ? m.b : m.a);
-      h += `<div class="mrow"><b>${esc(dayById(m.day) ? dayById(m.day).name : m.day)} ${fmt(m.start)}</b><span>${esc(cfg.courts[m.court] || "")}</span><span>contra <b style="font-family:var(--body);font-size:1rem">${esc(pname(o))}</b></span></div>`; });
+      h += `<div class="mrow"><b>${dayById(m.day) ? `<span class="dl">${esc(dayById(m.day).name)}</span><span class="ds">${esc(dshort(dayById(m.day)))}</span>` : esc(m.day)} ${fmt(m.start)}</b><span>${esc(cfg.courts[m.court] || "")}</span><span><span class="dl">contra </span><b style="font-family:var(--body);font-size:1rem">${esc(pname(o))}</b></span></div>`; });
     un.forEach(m => { const o = pairById(m.a === p.id ? m.b : m.a);
       h += `<div class="mrow"><b style="color:var(--warn)">Sin hora</b><span></span><span>contra ${esc(pname(o))} · <span class="muted small">${esc(m.reason)}</span></span></div>`; });
     if(!sched.length && !un.length) h += `<p class="muted">No tiene partidos en este grupo.</p>`;
