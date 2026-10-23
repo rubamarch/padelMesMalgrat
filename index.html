@@ -566,6 +566,9 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   .pg2 { background: radial-gradient(130% 120% at 90% 0%, #4c5fd6 0%, #1d2a6e 50%, var(--night) 90%); }
   .pg3 { background: radial-gradient(130% 120% at 90% 0%, #29554d 0%, #12352f 50%, var(--night) 90%); }
   .pgen::after { background: radial-gradient(circle at 34% 30%, #f5f9b8, var(--ball) 50%, #a9b236); }
+  .pgen.pfoto { background-color: var(--night); background-size: cover; background-position: center; }
+  .pgen.pfoto::before { opacity: 1; background: linear-gradient(0deg, rgba(0,34,71,.92) 0%, rgba(0,34,71,.45) 45%, rgba(0,34,71,.05) 75%); }
+  .pgen.pfoto::after { display: none; }
   .filtro { border-radius: 999px; }
   .filtro[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
   .thero { border-radius: 24px; }
@@ -2260,6 +2263,8 @@ function vacio(){ return {v: 1, config: defaultConfig(), pairs: [], schedule: nu
 function hashN(s){ let h = 0; for(const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); }
 function posterHTML(t){
   if(t.cartel) return `<img src="${esc(t.cartel)}" alt="Cartel de ${esc(t.nombre)}" loading="lazy" referrerpolicy="no-referrer">`;
+  const fotos = Array.isArray(APP.fotosTorneo) ? APP.fotosTorneo.filter(Boolean) : [];
+  if(fotos.length) return `<div class="pgen pfoto" style="background-image:url('${esc(encodeURI(fotos[(torneos.findIndex(x => x.id === t.id) + 1 || hashN(t.id) + 1) % fotos.length]))}')" aria-hidden="true"><small>${esc(t.fechas)}</small><strong>${esc(t.nombre)}</strong></div>`;
   return `<div class="pgen pg${hashN(t.id) % 4}" aria-hidden="true"><small>${esc(t.fechas)}</small><strong>${esc(t.nombre)}</strong></div>`;
 }
 function plazasTxt(t){
