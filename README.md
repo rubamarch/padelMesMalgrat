@@ -88,10 +88,11 @@ En un par de minutos la web queda en https://rubamarch.github.io/padelMesMalgrat
 ### Horario: colocar partidos
 
 - Toca un partido (también los de fase final) y luego una celda libre u otro partido para moverlo o intercambiarlo.
-  Los de *Sin programar* también se pueden colocar a mano desde su panel (día, hora y pista).
+  Los de *Sin programar* igual: tócalo y luego cualquier celda, también la del día de finales. Si se regenera el horario,
+  esos partidos se vuelven a colocar automáticamente.
 - **Sin programar**: toca un partido para ver *por qué no entra* (disponibilidad de las dos parejas día a día y qué
   bloquea cada franja) y las soluciones: colocarlo, hacer hueco moviendo otro partido, buscar una combinación moviendo
-  varios (cadenas de hasta 6 movimientos), subir el máximo por día, cambiar de subgrupo o pedir a una pareja que amplíe su horario.
+  varios (cadenas de hasta 6 movimientos, máximo 3 segundos), subir el máximo por día, cambiar de subgrupo o pedir a una pareja que amplíe su horario.
 - **Ayúdame a colocarlo todo** recoloca lo que se pueda sin cambiar la disponibilidad de nadie y respeta los partidos fijados.
   Si después queda algo, es que con esos datos no cabe: hace falta uno de los cambios anteriores.
 

@@ -391,6 +391,7 @@ table.grid td.time small{display:block;font-family:var(--body);font-size:.72rem;
 .uitem .dg-ver{font-size:.78rem;font-weight:700;color:var(--accent)}
 .dg-panel{display:flex;flex-direction:column;gap:8px;padding:12px 14px;margin:-2px 0 6px;border:1px solid var(--line);border-left:3px solid var(--ball);border-radius:6px;background:var(--surface)}
 .dg-panel p{margin:0}
+.dg-hint{padding:8px 10px;border-radius:6px;background:var(--ball);color:#1f2a10;font-size:.9rem}
 .dg-dias{display:flex;flex-direction:column;gap:10px}
 .dg-day{display:grid;grid-template-columns:minmax(90px,max-content) auto 1fr;gap:3px 10px;align-items:center;font-size:.8rem}
 .dg-day > b{grid-column:1/-1;font-size:.85rem}
@@ -402,8 +403,6 @@ table.grid td.time small{display:block;font-family:var(--body);font-size:.72rem;
 .dg-bar i.on{background:var(--court)}
 .dg-bar.dg-com i.ok{background:var(--ball)}
 .dg-ul{margin:0;padding-left:18px;font-size:.85rem}
-.dg-manual{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:6px;border:1px dashed var(--line)}
-.dg-manual select{flex:1;min-width:0;max-width:100%}
 .dg-ops{display:flex;flex-direction:column;gap:6px}
 .dg-op{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 10px;border-radius:6px;background:var(--bg);font-size:.88rem}
 .dg-op span{flex:1;min-width:220px}
@@ -1122,7 +1121,10 @@ function generate(){
    opts.soloDesde: no prueba horarios nuevos, solo intenta meter lo que falta en el actual */
 function solve(itersOverride, opts = {}){
   const cfg = state.config, slots = buildSlots(cfg), A = availSets();
-  const matches = allMatches(), byId = Object.fromEntries(matches.map(m => [m.id, m]));
+  const todos = allMatches(), slotDays = new Set(slots.map(s => s.day));
+  /* partidos puestos a mano en un día sin franjas (día de finales): se respetan al completar el horario actual, no al regenerarlo */
+  const aparte = !opts.desde ? [] : ((opts.desde.matches) || []).filter(x => x.pinned && !slotDays.has(x.day) && dayById(x.day) && todos.some(m => m.id === x.id));
+  const matches = todos.filter(m => !aparte.some(x => x.id === m.id)), byId = Object.fromEntries(matches.map(m => [m.id, m]));
   const feas = {};
   matches.forEach(m => feas[m.id] = slots.filter(s => canPlay(A,m.a,s) && canPlay(A,m.b,s)).map(s => s.i));
   const slotIdx = Object.fromEntries(slots.map(s => [s.day+"@"+s.start, s.i]));
@@ -1261,7 +1263,9 @@ function solve(itersOverride, opts = {}){
 
   let best = null;
   const iters = opts.soloDesde ? 0 : itersOverride || Math.max(40, Math.min(300, Math.round(30000 / (matches.length + 1))));
+  const tLoop = Date.now() + (opts.loopMs || Infinity);
   for(let it = 0; it < iters; it++){
+    if(it > 0 && Date.now() > tLoop) break;
     const r = rng(it * 7919 + 13), ctx = newCtx();
     for(const p of pinnedPrev){
       const si = slotIdx[p.day+"@"+p.start];
@@ -1331,7 +1335,7 @@ function solve(itersOverride, opts = {}){
     matches: Object.keys(ctx.pos).map(mid => {
       const m = byId[mid], p = ctx.pos[mid], s = slots[p.s];
       return {id: mid, a: m.a, b: m.b, g: m.g, sub: m.sub, day: s.day, start: s.start, court: p.c, pinned: ctx.pinned.has(mid)};
-    }),
+    }).concat(aparte.map(x => ({...x}))),
     unscheduled: best.left.map(m => ({id: m.id, a: m.a, b: m.b, g: m.g, sub: m.sub,
       reason: feas[m.id].length ? "No queda hueco: pistas llenas o límite de partidos por día" : "Las dos parejas no coinciden en ninguna franja"})),
   };
@@ -1390,6 +1394,8 @@ function finalsPlan(){
   const gOrd = m => { const g = groupOf(m.g); return lvl[g.level] * 10 + cfg.categories.indexOf(g.cat); };
   const take = (m, cell) => { used.add(cell.ti + ":" + cell.c); pos[m.id] = cell; };
   const free = cell => !used.has(cell.ti + ":" + cell.c);
+  /* partidos de grupo colocados a mano en el día de finales */
+  ((state.schedule && state.schedule.matches) || []).filter(m => m.day === d.id).forEach(m => { const ti = times.indexOf(m.start); if(ti >= 0) used.add(ti + ":" + m.court); });
   /* partidos colocados a mano: se respetan si su celda sigue existiendo */
   const fijos = state.finalsPos || {};
   ms.forEach(m => { const f = fijos[m.id]; if(!f) return; const cell = cells.find(c => times[c.ti] === f.start && c.c === f.court); if(cell && free(cell)) take(m, cell); });
@@ -1476,7 +1482,7 @@ function validateAll(){
   const maxDay = cfg.maxPerDay > 0 ? cfg.maxPerDay : Infinity;
   sch.matches.forEach(m => {
     const iss = [], s = {day: m.day, start: m.start, end: m.start + cfg.duration};
-    if(!dayById(m.day) || !dayById(m.day).on) iss.push("Día desactivado en Ajustes");
+    if(!dayById(m.day) || !(dayById(m.day).on || dayById(m.day).finals)) iss.push("Día desactivado en Ajustes");
     for(const pid of [m.a, m.b]){
       const p = pairById(pid); if(!p){ iss.push("Pareja eliminada"); continue; }
       if(!canPlay(A, pid, s)) iss.push(pshort(p) + " no está disponible a esa hora");
@@ -1598,13 +1604,23 @@ function renderHorario(){
     if(!d.on){
       const fp = d === finalsDay() ? finalsPlan() : null, fs = []; for(let t = d.start; t + cfg.duration <= d.end; t += cfg.duration) fs.push(t);
       const fc = {}; (fp ? fp.placed : []).forEach(m => fc[m.start + "#" + m.court] = m);
+      sch.matches.filter(m => m.day === d.id).forEach(m => fc[m.start + "#" + m.court] = {...m, grupo: true});
       const fsel = selected && selected.kind === "f" ? selected.id : null;
       h += `<details class="day" data-day="${d.id}"${diasAbiertos.has(d.id) ? " open" : ""}><summary><h2>${esc(d.name)} <span>${fmt(d.start)}–${fmt(d.end)} · fases finales · ${fp ? fp.placed.length : 0} partidos${gsel.size ? ` · <b>${fp ? fp.placed.filter(m => matchVisible(m)).length : 0} de tu filtro</b>` : ""}</span></h2></summary>`;
       if(fp && fp.left.length) h += `<div class="notice warn"><span><b>No caben ${fp.left.length} partido${fp.left.length>1?"s":""} de fase final</b> (${esc(fp.left.map(m => groupOf(m.g).short + " " + m.name).join(", "))}). Amplía el horario del ${esc(d.name.toLowerCase())} o pon más niveles a «Solo final» en Ajustes.</span></div>`;
       h += `<div class="scroll"><table class="grid"><thead><tr><th></th>${cfg.courts.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>`;
       fs.forEach(t => { h += `<tr><td class="time">${fmt(t)}<small>a ${fmt(t+cfg.duration)}</small></td>${cfg.courts.map((c, ci) => {
         const m = fc[t + "#" + ci];
-        if(!m) return ADMIN ? `<td><button class="cell final${fsel ? " fits" : ""}" data-act="fdrop" data-start="${t}" data-court="${ci}">${fsel ? "Mover aquí" : "Libre"}</button></td>` : `<td><div class="cell final">Libre</div></td>`;
+        if(!m){
+          if(!ADMIN) return `<td><div class="cell final">Libre</div></td>`;
+          const fits = selM && (() => { const A = availSets(), sl = {day: d.id, start: t, end: t + cfg.duration}; return canPlay(A, selM.a, sl) && canPlay(A, selM.b, sl); })();
+          return fsel ? `<td><button class="cell final fits" data-act="fdrop" data-start="${t}" data-court="${ci}">Mover aquí</button></td>`
+            : `<td><button class="cell final${fits ? " fits" : ""}" data-act="drop" data-day="${d.id}" data-start="${t}" data-court="${ci}">${selM ? "Poner aquí" : "Libre"}</button></td>`;
+        }
+        if(m.grupo){
+          const g = groupOf(m.g), iss = issues[m.id];
+          return `<td><button class="cell ${g ? g.cls : ""}${!matchVisible(m) ? " dim" : ""}${selM && selM.id === m.id ? " sel" : ""}" ${ADMIN ? `data-act="pick" data-mid="${esc(m.id)}"` : `style="cursor:default"`} title="${esc((iss || []).join("\n"))}"><span class="tag">${esc(mlabel(m))}${m.pinned ? `<span class="pin">FIJADO</span>` : ""}${iss ? `<span class="iss">!</span>` : ""}</span><span class="vs">${esc(pshort(pairById(m.a)))}<br><i>vs</i> ${esc(pshort(pairById(m.b)))}</span></button></td>`;
+        }
         const g = groupOf(m.g), tit = m.early ? "Se juega antes de que acaben sus semifinales" : "";
         const inner = `<span class="tag">${esc(g.short)} · ${esc(m.name.toUpperCase())}${m.fixed ? `<span class="pin">FIJADO</span>` : ""}${m.early ? `<span class="iss">!</span>` : ""}</span><span class="vs">${esc(m.a)}<br><i>vs</i> ${esc(m.b)}</span>`;
         return ADMIN ? `<td><button class="cell ${g.cls}${!matchVisible(m) ? " dim" : ""}${fsel === m.id ? " sel" : ""}" data-act="fpick" data-fid="${esc(m.id)}" title="${tit}">${inner}</button></td>`
@@ -1776,7 +1792,7 @@ function diagDias(u, A){
 }
 function renderDiag(u){
   const D = diagnostico(u), pa = pairById(u.a), pb = pairById(u.b), cfg = state.config;
-  let h = `<div class="dg-panel"><div class="dg-dias">${diagDias(u, D.A)}</div>`;
+  let h = `<div class="dg-panel"><p class="dg-hint">👆 Está seleccionado: toca <b>cualquier celda del horario</b> (también el día de finales) para ponerlo ahí. Si está ocupada, el partido que había pasa aquí abajo.</p><div class="dg-dias">${diagDias(u, D.A)}</div>`;
   if(!D.comunes.length){
     h += `<p><b>Por qué no entra:</b> ${esc(pshort(pa))} y ${esc(pshort(pb))} no tienen ninguna franja de ${cfg.duration} min en la que puedan las dos. Mira las barras: en ningún día coinciden lo suficiente.</p>`;
   } else {
@@ -1794,15 +1810,7 @@ function renderDiag(u){
   D.casi.forEach(o => { const p = pairById(o.pid);
     ops.push(`<div class="dg-op"><span><b>Pedir a ${esc(pname(p))}</b>${p.tel ? ` (${esc(p.tel)})` : ""} si puede el <b>${esc(dayById(o.s.day).name.toLowerCase())} ${esc(rangesOf(o.need))}</b>. Con eso jugarían el ${esc(slotTxt(o.s))} en ${esc(cfg.courts[o.court])}.</span><button class="btn sm" data-act="dg-amplia" data-mid="${esc(u.id)}" data-pid="${esc(o.pid)}" data-day="${o.s.day}" data-start="${o.s.start}" data-court="${o.court}">Me ha dicho que sí</button></div>`); });
   h += ops.length ? `<p style="margin:6px 0 0"><b>Qué puedes hacer:</b></p><div class="dg-ops">${ops.join("")}</div>` : `<p class="muted">No encuentro ningún arreglo sencillo. Puedes colocarlo a mano en una celda libre (quedará marcado con !) o ampliar el horario de los días en Ajustes.</p>`;
-  /* colocar a mano: cualquier franja y pista, aunque no les vaya bien (quedará marcado con !) */
-  const ocup = {}; state.schedule.matches.forEach(m => ocup[m.day + "@" + m.start + "#" + m.court] = m);
-  const opts = cfg.days.filter(d => d.on).map(d => `<optgroup label="${esc(d.name)}">${D.slots.filter(s => s.day === d.id).map(s => cfg.courts.map((c, ci) => {
-    const o = ocup[s.day + "@" + s.start + "#" + ci], ok = canPlay(D.A, u.a, s) && canPlay(D.A, u.b, s);
-    const est = o ? `ocupada por ${mlabel(o)} ${pshort(pairById(o.a))} vs ${pshort(pairById(o.b))}` : ok ? "libre ✓ les va bien" : (no => "libre · " + no.map(pid => pshort(pairById(pid))).join(" y ") + (no.length > 1 ? " no pueden" : " no puede"))([u.a, u.b].filter(pid => !canPlay(D.A, pid, s)));
-    return `<option value="${s.day}|${s.start}|${ci}">${dshort(d)} ${fmt(s.start)} · ${esc(c)} — ${esc(est)}</option>`; }).join("")).join("")}</optgroup>`).join("");
-  h += `<div class="dg-manual"><p><b>Colocar a mano</b> <span class="muted small">Elige día, hora y pista. Si está ocupada, el partido que hay pasa a Sin programar. Si a alguna pareja no le va bien, quedará marcado con !</span></p>
-    <div class="row"><select class="in" id="dg-sel" aria-label="Día, hora y pista">${opts}</select><button class="btn sm primary" data-act="dg-manual" data-mid="${esc(u.id)}">Colocar aquí</button></div></div>`;
-  return h + `<p class="muted small" style="margin:0">También puedes tocar directamente una celda del horario de arriba: las amarillas les van bien a las dos parejas.</p></div>`;
+  return h + `</div>`;
 }
 function colocarU(uid, day, start, court, fijar = true){
   const sch = state.schedule, u = sch.unscheduled.find(x => x.id === uid); if(!u) return false;
@@ -1818,14 +1826,15 @@ function aplicarHueco(uid, o){
 /* coloca todo lo que se pueda sin pedir nada a las parejas */
 function ayudaColocar(){
   const sch = state.schedule, antes = sch.unscheduled.length;
-  const prueba = solve(Math.max(300, Math.min(900, Math.round(90000 / (allMatches().length + 1)))), {desde: sch, chainMs: 9000});
+  const prueba = solve(900, {desde: sch, loopMs: 1200, chainMs: 1300});
   if(prueba.unscheduled.length <= sch.unscheduled.length) state.schedule = prueba;
   let seguir = true;
   while(seguir){
     seguir = false;
     for(const u of [...state.schedule.unscheduled]){
-      const D = diagnostico(u);
-      if(D.directas.length){ const o = D.directas[0]; colocarU(u.id, o.s.day, o.s.start, o.b.court, false); seguir = true; }
+      const A = availSets(), ctx = ctxActual();
+      const o = buildSlots().filter(s => canPlay(A, u.a, s) && canPlay(A, u.b, s)).map(s => ({s, b: bloqueos(u, s, ctx, A)})).find(o => !o.b.out.length);
+      if(o){ colocarU(u.id, o.s.day, o.s.start, o.b.court, false); seguir = true; }
     }
   }
   return antes - state.schedule.unscheduled.length;
@@ -1952,7 +1961,7 @@ function renderParejas(){
     if(!n) h += `<p class="small muted" style="margin:0">Sin parejas.</p>`;
     subs.forEach((list, i) => {
       if(cfg.subSize && n) h += `<div class="eyebrow" style="margin-top:4px">Subgrupo ${esc(g.short)}${i+1} · ${list.length} parejas</div>`;
-      list.forEach(p => h += `<button class="pair" data-act="edit-pair" data-pid="${p.id}"><b>${esc(pname(p))}</b>${p.tel ? `<span>${esc(p.tel)}</span>` : ""}</button>`);
+      list.forEach(p => h += `<button class="pair" data-act="edit-pair" data-pid="${p.id}"><b>${esc(pname(p))}</b></button>`);
     });
     h += `<button class="btn sm" data-act="new-pair" data-g="${esc(g.key)}">+ Pareja en ${esc(g.short)}</button></div>`;
   });
@@ -2062,18 +2071,37 @@ function applyImport(replace){
   if(typeof registrarParejas === "function") registrarParejas(items);
 }
 function renderEditor(){
-  const cfg = state.config, e = editing;
+  const cfg = state.config, e = editing, days = cfg.days.filter(d => d.on || d.finals);
+  /* la disponibilidad solo se pinta en las parejas añadidas aquí; las demás la traen de la inscripción o del Excel */
+  let grid = "";
+  if(e.manual){
+    const minT = Math.min(...days.map(d => d.start)), maxT = Math.max(...days.map(d => d.end)), h0 = Math.floor(minT / 60) * 60;
+    grid = `<table><thead><tr><th></th>`;
+    for(let t = h0; t < maxT; t += 60) grid += `<th>${Math.floor(t / 60)}h</th>`;
+    grid += `<th></th></tr></thead><tbody>`;
+    days.forEach(d => {
+      const set = new Set(e.avail[d.id] || []);
+      grid += `<tr><td class="d">${esc(dshort(d))}</td>`;
+      for(let t = h0; t < maxT; t += 60){
+        const halves = [t, t + 30].filter(x => x >= d.start && x + 30 <= d.end);
+        const on = halves.length && halves.every(x => set.has(x));
+        grid += `<td><i class="c ${!halves.length ? "na" : on ? "on" : ""}" data-d="${d.id}" data-t="${halves.join(",")}" title="${esc(d.name)} ${fmt(t)}–${fmt(t + 60)}"></i></td>`;
+      }
+      grid += `<td class="q"><button class="btn sm" data-act="day-all" data-d="${d.id}">Todo</button> <button class="btn sm" data-act="day-none" data-d="${d.id}">Nada</button></td></tr>`;
+    });
+    grid = `<div><div class="eyebrow">Cuándo puede jugar</div><p class="small muted" style="margin:2px 0 8px">Pinta las horas arrastrando. Azul = disponible.</p><div class="avail" id="availgrid">${grid}</tbody></table></div></div>`;
+  }
   return `<div class="panel editor">
     <h2 style="font-size:1.4rem;text-transform:uppercase">${e.id ? "Editar pareja" : "Nueva pareja"}</h2>
     <div class="fields">
       <label class="f">Jugador/a 1<input id="ed-p1" value="${esc(e.p1)}" autocomplete="off"></label>
       <label class="f">Jugador/a 2<input id="ed-p2" value="${esc(e.p2)}" autocomplete="off"></label>
-      <label class="f">Teléfono<input id="ed-tel" type="tel" value="${esc(e.tel || "")}" autocomplete="off"></label>
       <label class="f">Categoría<select id="ed-cat">${cfg.categories.map(c => `<option ${c===e.cat?"selected":""}>${esc(c)}</option>`).join("")}</select></label>
       <label class="f">Nivel<select id="ed-level">${levelsFor(e.cat).concat(levelsFor(e.cat).includes(e.level) ? [] : [e.level]).map(l => `<option ${l===e.level?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
       ${cfg.subSize ? subSelect(e) : ""}
     </div>
     ${e.note ? `<p class="small" style="margin:0"><span class="muted">Nota de la inscripción:</span> «${esc(e.note)}»</p>` : ""}
+    ${grid}
     <div class="row">
       <button class="btn primary" data-act="save-pair">Guardar</button>
       <button class="btn" data-act="cancel-edit">Cancelar</button>
@@ -2081,7 +2109,6 @@ function renderEditor(){
       ${e.id ? `<button class="btn danger" data-act="delete-pair" id="del-btn">Eliminar pareja</button>` : ""}
     </div></div>`;
 }
-const cfg0 = () => state.config;
 function readEditorFields(){
   if(!editing) return;
   const g = id => document.getElementById(id);
@@ -2331,17 +2358,13 @@ document.addEventListener("click", async e => {
       if(left.length) setTimeout(() => { const el = document.querySelector(".dg-panel"); el && el.scrollIntoView({block: "center"}); }, 50);
     }, 30);
   }
-  else if(act === "dg-manual"){
-    const [day, st, c] = $("#dg-sel").value.split("|");
-    selected = {kind: "u", id: b.dataset.mid}; moveTo(day, +st, +c); toast("Partido colocado");
-  }
   else if(act === "dg-place"){ colocarU(b.dataset.mid, b.dataset.day, +b.dataset.start, +b.dataset.court); selected = null; save(); renderAll(); toast("Partido colocado"); }
   else if(act === "dg-hueco"){ aplicarHueco(b.dataset.mid, JSON.parse(b.dataset.op)); selected = null; save(); renderAll(); toast("Hecho: los dos partidos tienen hora"); }
   else if(act === "dg-cadena"){
     b.disabled = true; b.textContent = "Buscando…";
     setTimeout(() => {
       const prev = state.schedule, antes = Object.fromEntries(prev.matches.map(m => [m.id, m.day + m.start + "#" + m.court]));
-      const nuevo = solve(0, {desde: prev, soloDesde: true, solo: b.dataset.mid, chainMs: 6000});
+      const nuevo = solve(0, {desde: prev, soloDesde: true, solo: b.dataset.mid, chainMs: 2500});
       if(nuevo.unscheduled.some(x => x.id === b.dataset.mid)){ toast("No hay ninguna combinación que lo deje entrar sin cambiar disponibilidades. Mira las otras opciones."); b.disabled = false; b.textContent = "Buscar"; return; }
       const movidos = nuevo.matches.filter(m => antes[m.id] && antes[m.id] !== m.day + m.start + "#" + m.court).length;
       state.schedule = nuevo; selected = null; save(); renderAll();
@@ -2388,7 +2411,7 @@ document.addEventListener("click", async e => {
   else if(act === "funpin"){ if(state.finalsPos) delete state.finalsPos[selected.id]; selected = null; save(); renderAll(); }
   else if(act === "pick-u"){
     const mid = b.dataset.mid; selected = selected && selected.id === mid ? null : {kind: "u", id: mid};
-    if(selected){ const u = state.schedule.unscheduled.find(x => x.id === mid), A = availSets(); buildSlots().forEach(s => { if(canPlay(A, u.a, s) && canPlay(A, u.b, s)) diasAbiertos.add(s.day); }); }
+    if(selected) state.config.days.forEach(d => { if(d.on || d.finals) diasAbiertos.add(d.id); });
     renderHorario();
   }
   else if(act === "drop"){ if(selected && selected.kind !== "f") moveTo(b.dataset.day, +b.dataset.start, +b.dataset.court); }
@@ -2414,7 +2437,7 @@ document.addEventListener("click", async e => {
   else if(act === "new-pair"){
     readEditorFields();
     const [cat, level] = (b.dataset.g || (state.config.categories[0] + "|" + state.config.levels[0])).split("|");
-    editing = {id: null, p1: "", p2: "", cat, level, avail: {}};
+    editing = {id: null, p1: "", p2: "", cat, level, avail: {}, manual: true};
     renderParejas(); window.scrollTo({top: 0}); const f = document.getElementById("ed-p1"); f && f.focus();
   }
   else if(act === "edit-pair"){
@@ -2433,8 +2456,7 @@ document.addEventListener("click", async e => {
     readEditorFields();
     if(!editing.p1 && !editing.p2){ toast("Escribe al menos un nombre"); return; }
     const p = {...editing, id: editing.id || uid()};
-    /* la disponibilidad llega de la inscripción o del Excel; una pareja añadida a mano puede a cualquier hora */
-    if(!Object.values(p.avail || {}).some(a => a.length)){ p.avail = {}; cfg0().days.forEach(d => { const a = []; for(let t = d.start; t + 30 <= d.end; t += 30) a.push(t); p.avail[d.id] = a; }); }
+    if(p.manual && !Object.values(p.avail || {}).some(a => a.length)){ toast("Marca cuándo puede jugar la pareja"); return; }
     const i = state.pairs.findIndex(x => x.id === p.id);
     if(i >= 0) state.pairs[i] = p; else state.pairs.push(p);
     editing = null; save(); renderAll(); toast("Pareja guardada");
