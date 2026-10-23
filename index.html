@@ -1136,7 +1136,7 @@ function solve(itersOverride, opts = {}){
   const cfg = state.config, slots = buildSlots(cfg), A = availSets();
   const todos = allMatches(), slotDays = new Set(slots.map(s => s.day));
   /* partidos puestos a mano en un día sin franjas (día de finales): se respetan al completar el horario actual, no al regenerarlo */
-  const aparte = !opts.desde ? [] : ((opts.desde.matches) || []).filter(x => x.pinned && !slotDays.has(x.day) && dayById(x.day) && todos.some(m => m.id === x.id));
+  const aparte = !opts.desde ? [] : ((opts.desde.matches) || []).filter(x => !slotDays.has(x.day) && dayById(x.day) && todos.some(m => m.id === x.id));
   const matches = todos.filter(m => !aparte.some(x => x.id === m.id)), byId = Object.fromEntries(matches.map(m => [m.id, m]));
   const feas = {};
   matches.forEach(m => feas[m.id] = slots.filter(s => canPlay(A,m.a,s) && canPlay(A,m.b,s)).map(s => s.i));
@@ -1580,7 +1580,7 @@ function renderHorario(){
   if(selected && selected.kind !== "f") selM = selected.kind === "s" ? sch.matches.find(m => m.id === selected.id) : sch.unscheduled.find(m => m.id === selected.id);
   if(!selM && selected && selected.kind !== "f") selected = null;
   const A = selM ? availSets() : null;
-  const pinnedN = sch.matches.filter(m => m.pinned).length;
+  const pinnedN = sch.matches.filter(m => m.pinned).length + Object.values(state.finalsPos || {}).filter(f => f.m).length;
   const nIss = Object.keys(issues).length;
 
   let h = `<div class="row">
@@ -1597,8 +1597,8 @@ function renderHorario(){
   const selF = selected && selected.kind === "f" ? finalsPlan().placed.find(m => m.id === selected.id) : null;
   if(selected && selected.kind === "f" && !selF) selected = null;
   /* acciones del partido seleccionado: barra flotante abajo, para que el horario no se mueva */
-  const acc = selF && selF.fixed ? `<button class="btn sm" data-act="funpin">Soltar (colocación automática)</button>`
-    : selM && selected.kind === "s" ? `<button class="btn sm" data-act="unschedule">Quitar del horario</button>${selM.pinned ? `<button class="btn sm" data-act="unpin">Soltar</button>` : ""}` : "";
+  const acc = selF ? (selF.fixed ? `<button class="btn sm" data-act="funpin">Soltar</button>` : `<button class="btn sm" data-act="ffix">Fijar</button>`)
+    : selM && selected.kind === "s" ? `<button class="btn sm" data-act="unschedule">Quitar del horario</button>${selM.pinned ? `<button class="btn sm" data-act="unpin">Soltar</button>` : `<button class="btn sm" data-act="pin">Fijar</button>`}` : "";
   if(acc) h += `<div class="selacc">${acc}</div>`;
 
   cfg.days.filter(d => d.on || d.finals).forEach(d => {
@@ -1814,7 +1814,7 @@ function renderDiag(u){
   h += ops.length ? `<p style="margin:6px 0 0"><b>Qué puedes hacer:</b></p><div class="dg-ops">${ops.join("")}</div>` : `<p class="muted">No encuentro ningún arreglo sencillo. Puedes colocarlo a mano en una celda libre (quedará marcado con !) o ampliar el horario de los días en Ajustes.</p>`;
   return h + `</div>`;
 }
-function colocarU(uid, day, start, court, fijar = true){
+function colocarU(uid, day, start, court, fijar = false){
   const sch = state.schedule, u = sch.unscheduled.find(x => x.id === uid); if(!u) return false;
   sch.unscheduled = sch.unscheduled.filter(x => x !== u);
   sch.matches.push({id: u.id, a: u.a, b: u.b, g: u.g, sub: u.sub, day, start, court, pinned: fijar});
@@ -1852,10 +1852,10 @@ function moveTo(day, start, court){
   } else m = sch.matches.find(x => x.id === selected.id);
   const target = sch.matches.find(x => x !== m && x.day === day && x.start === start && x.court === court);
   if(target){
-    if(selected.kind === "s"){ Object.assign(target, {day: m.day, start: m.start, court: m.court, pinned: true}); }
+    if(selected.kind === "s"){ Object.assign(target, {day: m.day, start: m.start, court: m.court}); }
     else { sch.matches = sch.matches.filter(x => x !== target); sch.unscheduled.push({id: target.id, a: target.a, b: target.b, g: target.g, sub: target.sub, reason: "Quitado a mano"}); }
   }
-  Object.assign(m, {day, start, court, pinned: true});
+  Object.assign(m, {day, start, court});
   selected = null; save(); renderAll();
 }
 /* ---------- Cuadros: cross table per group, like the club's paper sheet ---------- */
@@ -2401,7 +2401,7 @@ document.addEventListener("click", async e => {
       const fp = finalsPlan(), a = fp.placed.find(m => m.id === selected.id), o = fp.placed.find(m => m.id === id);
       const fx = state.finalsPos ||= {};
       fp.placed.forEach(m => { fx[m.id] ||= {start: m.start, court: m.court}; });
-      fx[a.id] = {start: o.start, court: o.court, m: true}; fx[o.id] = {start: a.start, court: a.court, m: true};
+      fx[a.id] = {start: o.start, court: o.court, m: fx[a.id].m}; fx[o.id] = {start: a.start, court: a.court, m: fx[o.id].m};
       selected = null; save(); renderAll(); toast("Partidos intercambiados"); return;
     }
     selected = {kind: "f", id}; renderHorario();
@@ -2410,13 +2410,16 @@ document.addEventListener("click", async e => {
     if(!selected || selected.kind !== "f") return;
     const fp = finalsPlan(), fx = state.finalsPos ||= {};
     fp.placed.forEach(m => { fx[m.id] ||= {start: m.start, court: m.court}; });
-    fx[selected.id] = {start: +b.dataset.start, court: +b.dataset.court, m: true};
+    fx[selected.id] = {start: +b.dataset.start, court: +b.dataset.court, m: fx[selected.id].m};
     selected = null; save(); renderAll();
   }
-  else if(act === "funpin"){ if(state.finalsPos) delete state.finalsPos[selected.id]; selected = null; save(); renderAll(); }
+  else if(act === "funpin" || act === "ffix"){
+    const fp = finalsPlan(), fx = state.finalsPos ||= {}, m = fp.placed.find(x => x.id === selected.id);
+    fp.placed.forEach(x => { fx[x.id] ||= {start: x.start, court: x.court}; });
+    fx[m.id].m = act === "ffix"; save(); renderHorario(); toast(act === "ffix" ? "Partido fijado" : "Partido soltado");
+  }
   else if(act === "pick-u"){
     const mid = b.dataset.mid; selected = selected && selected.id === mid ? null : {kind: "u", id: mid};
-    if(selected) state.config.days.forEach(d => { if(d.on || d.finals) diasAbiertos.add(d.id); });
     renderHorario();
   }
   else if(act === "drop"){ if(selected && selected.kind !== "f") moveTo(b.dataset.day, +b.dataset.start, +b.dataset.court); }
@@ -2427,8 +2430,8 @@ document.addEventListener("click", async e => {
     sch.unscheduled.push({id: m.id, a: m.a, b: m.b, g: m.g, sub: m.sub, reason: "Quitado a mano"});
     selected = null; save(); renderAll();
   }
-  else if(act === "unpin"){ const m = state.schedule.matches.find(x => x.id === selected.id); m.pinned = false; save(); renderHorario(); }
-  else if(act === "unpin-all"){ state.schedule.matches.forEach(m => m.pinned = false); save(); renderHorario(); toast("Ningún partido fijado"); }
+  else if(act === "unpin" || act === "pin"){ const m = state.schedule.matches.find(x => x.id === selected.id); m.pinned = act === "pin"; save(); renderHorario(); toast(m.pinned ? "Partido fijado" : "Partido soltado"); }
+  else if(act === "unpin-all"){ state.schedule.matches.forEach(m => m.pinned = false); Object.values(state.finalsPos || {}).forEach(f => f.m = false); save(); renderHorario(); toast("Ningún partido fijado"); }
   else if(act === "export-csv"){
     const csv = "﻿" + [HEAD, ...scheduleRows()].map(r => r.map(v => /[;"\n]/.test(v) ? `"${v.replace(/"/g,'""')}"` : v).join(";")).join("\r\n");
     if(downloads){
