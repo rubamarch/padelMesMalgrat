@@ -388,10 +388,11 @@ table.grid td.time small{display:block;font-family:var(--body);font-size:.72rem;
 .uitem{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer;text-align:left;width:100%}
 .uitem.sel{outline:3px solid var(--ball)}
 .uitem .why{color:var(--warn);font-size:.82rem;margin-left:auto}
-.uitem .dg-ver{font-size:.78rem;font-weight:700;color:var(--accent)}
+.urow{display:flex;gap:6px;align-items:stretch}
+.urow .uitem{flex:1;min-width:0}
+.urow .dg-ver{flex:none;align-self:center}
 .dg-panel{display:flex;flex-direction:column;gap:8px;padding:12px 14px;margin:-2px 0 6px;border:1px solid var(--line);border-left:3px solid var(--ball);border-radius:6px;background:var(--surface)}
 .dg-panel p{margin:0}
-.dg-hint{padding:8px 10px;border-radius:6px;background:var(--ball);color:#1f2a10;font-size:.9rem}
 .dg-dias{display:flex;flex-direction:column;gap:10px}
 .dg-day{display:grid;grid-template-columns:minmax(90px,max-content) auto 1fr;gap:3px 10px;align-items:center;font-size:.8rem}
 .dg-day > b{grid-column:1/-1;font-size:.85rem}
@@ -442,6 +443,16 @@ table.cross td.warn{background:var(--warn-soft)}
 .pair:hover{border-color:var(--line);background:var(--bg)}
 .pair b{font-weight:600}
 .pair span{font-size:.78rem;color:var(--muted)}
+.groups{gap:10px}
+.groups .gcard{gap:2px;padding:10px 12px}
+.groups .gcard h3{margin-bottom:4px}
+.groups .pair{padding:1px 6px;border-radius:4px;font-size:.84rem;line-height:1.25}
+.groups .gcard h3{flex-wrap:nowrap;white-space:nowrap;font-size:.98rem}
+.groups .gcard h3 .muted{font-size:.74rem;white-space:nowrap}
+.groups .gvacios{grid-column:1/-1}
+.groups .pair b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.groups .eyebrow{margin-top:6px!important;font-size:.68rem}
+.groups .gcard > .btn{margin-top:6px;align-self:flex-start}
 .editor{display:flex;flex-direction:column;gap:14px}
 .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
 .avail{overflow-x:auto;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -1035,7 +1046,7 @@ document.addEventListener("toggle", e => {
   if(el.matches && el.matches("details.day")){ if(el.open) diasAbiertos.add(el.dataset.day); else diasAbiertos.delete(el.dataset.day); }
   if(el.id === "fold-ins") insAbierto = el.open;
 }, true);
-let insAbierto = false;
+let insAbierto = false, diagVer = null;
 document.addEventListener("click", e => {
   const b = e.target.closest(".fold-cerrar"); if(!b) return;
   const d = b.closest("details"); d.open = false;
@@ -1669,12 +1680,13 @@ function renderHorario(){
       <button class="btn primary" data-act="dg-todo">Ayúdame a colocarlo todo</button></div><div class="ulist">`;
     const A = availSets(), slots = buildSlots();
     sch.unscheduled.forEach(m => {
-      const g = groupOf(m.g), sel = selected && selected.kind==="u" && selected.id===m.id;
+      const g = groupOf(m.g), sel = selected && selected.kind==="u" && selected.id===m.id, ver = diagVer === m.id;
       const n = slots.filter(s => canPlay(A, m.a, s) && canPlay(A, m.b, s)).length;
       const why = m.reason === "Quitado a mano" ? m.reason : n ? `Coinciden en ${n} franja${n > 1 ? "s" : ""}, pero están ocupadas` : "No coinciden en ninguna franja";
-      h += `<button class="uitem ${sel ? "sel" : ""}" data-act="pick-u" data-mid="${esc(m.id)}" aria-expanded="${sel}">
-        ${g?`<span class="chip ${g.cls}">${esc(mlabel(m))}</span>`:""}<span>${esc(pname(pairById(m.a)))} <span class="muted">vs</span> ${esc(pname(pairById(m.b)))}</span><span class="why">${esc(why)}</span><span class="dg-ver">${sel ? "Cerrar" : "Ver por qué"}</span></button>`;
-      if(sel) h += renderDiag(m);
+      h += `<div class="urow"><button class="uitem ${sel ? "sel" : ""}" data-act="pick-u" data-mid="${esc(m.id)}" aria-pressed="${sel}">
+        ${g?`<span class="chip ${g.cls}">${esc(mlabel(m))}</span>`:""}<span>${esc(pname(pairById(m.a)))} <span class="muted">vs</span> ${esc(pname(pairById(m.b)))}</span><span class="why">${esc(why)}</span></button>
+        <button class="btn sm dg-ver" data-act="dg-ver" data-mid="${esc(m.id)}" aria-expanded="${ver}">${ver ? "Cerrar" : "Ver por qué"}</button></div>`;
+      if(ver) h += renderDiag(m);
     });
     h += `</div>`;
   }
@@ -1792,7 +1804,7 @@ function diagDias(u, A){
 }
 function renderDiag(u){
   const D = diagnostico(u), pa = pairById(u.a), pb = pairById(u.b), cfg = state.config;
-  let h = `<div class="dg-panel"><p class="dg-hint">👆 Está seleccionado: toca <b>cualquier celda del horario</b> (también el día de finales) para ponerlo ahí. Si está ocupada, el partido que había pasa aquí abajo.</p><div class="dg-dias">${diagDias(u, D.A)}</div>`;
+  let h = `<div class="dg-panel"><div class="dg-dias">${diagDias(u, D.A)}</div>`;
   if(!D.comunes.length){
     h += `<p><b>Por qué no entra:</b> ${esc(pshort(pa))} y ${esc(pshort(pb))} no tienen ninguna franja de ${cfg.duration} min en la que puedan las dos. Mira las barras: en ningún día coinciden lo suficiente.</p>`;
   } else {
@@ -1951,7 +1963,8 @@ function renderParejas(){
     <button class="btn" data-act="new-pair">Añadir pareja</button>
     <span class="spacer"></span><span class="muted small">Toca una pareja para editarla.</span></div>`;
   h += `<div class="groups">`;
-  gs.forEach(g => {
+  const vacios = gs.filter(g => !state.pairs.some(p => gkey(p) === g.key));
+  gs.filter(g => !vacios.includes(g)).forEach(g => {
     const ps = state.pairs.filter(p => gkey(p) === g.key);
     const n = ps.length, k = cfg.subSize ? subCount(g.key) : 1;
     const subs = []; for(let i = 1; i <= k; i++) subs.push(cfg.subSize ? ps.filter(p => subOf(p) === i) : ps);
@@ -1965,6 +1978,7 @@ function renderParejas(){
     });
     h += `<button class="btn sm" data-act="new-pair" data-g="${esc(g.key)}">+ Pareja en ${esc(g.short)}</button></div>`;
   });
+  if(vacios.length) h += `<div class="gcard gvacios"><h3>Sin parejas</h3><div class="row" style="gap:6px">${vacios.map(g => `<button class="btn sm" data-act="new-pair" data-g="${esc(g.key)}" title="Añadir pareja en ${esc(g.label)}">+ ${esc(g.short)}</button>`).join("")}</div></div>`;
   const orphan = state.pairs.filter(p => !groupOf(gkey(p)));
   if(orphan.length){
     h += `<div class="gcard"><h3>Sin grupo válido</h3><p class="small" style="color:var(--warn);margin:0">Su categoría o nivel ya no existe en Ajustes. No entran en el horario.</p>`;
@@ -2349,11 +2363,12 @@ document.addEventListener("click", async e => {
     if(selected && selected.kind !== "f"){ const m = state.schedule.matches.find(x => x.id === mid); moveTo(m.day, m.start, m.court); return; }
     selected = {kind: "s", id: mid}; renderHorario();
   }
+  else if(act === "dg-ver"){ diagVer = diagVer === b.dataset.mid ? null : b.dataset.mid; renderHorario(); }
   else if(act === "dg-todo"){
     b.disabled = true; b.textContent = "Buscando huecos…";
     setTimeout(() => {
       const n = ayudaColocar(), left = state.schedule.unscheduled;
-      selected = left.length ? {kind: "u", id: left[0].id} : null; save(); renderAll();
+      selected = left.length ? {kind: "u", id: left[0].id} : null; diagVer = left.length ? left[0].id : null; save(); renderAll();
       toast(left.length ? `${n ? `He colocado ${n}. ` : "No he podido colocar ninguno más. "}Quedan ${left.length}: te enseño qué hacer con cada uno.` : `Listo: he colocado ${n} y ya están todos`);
       if(left.length) setTimeout(() => { const el = document.querySelector(".dg-panel"); el && el.scrollIntoView({block: "center"}); }, 50);
     }, 30);
