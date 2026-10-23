@@ -1001,7 +1001,7 @@ function rowsToPairs(rows){
     items.push({row: i+1, warn: pa.warn, pair});
   });
   if(!hdr) warn.push("No encuentro la fila de títulos (Jugador 1, Jugador 2, Nivel, Disponibilidad)");
-  return {items, warn};
+  return {items, warn, hdr: !!hdr};
 }
 
 let cuadroFilter = "", gsel = new Set(), diasAbiertos = new Set();
@@ -1658,7 +1658,7 @@ function renderImportPreview(){
   const mine = state.pairs.length && !state.example;
   let h = `<div class="panel" style="display:flex;flex-direction:column;gap:10px">
     <div class="row"><h2 style="font-size:1.4rem;text-transform:uppercase">Revisa el Excel</h2><span class="muted small">${esc(ip.file)}</span></div>
-    <p style="margin:0"><b>${ip.items.length} parejas leídas.</b> ${nW ? `<span style="color:var(--warn)">${nW} con avisos</span>, casi siempre horas fuera del horario del club (no se usan).` : "Sin avisos."}
+    <p style="margin:0"><b>${ip.items.length} parejas leídas.</b> ${nW ? `<span style="color:var(--warn)">${nW} con avisos</span>, casi siempre horas fuera del horario del club (no se usan).` : ip.warn.length ? `<span style="color:var(--warn)">${ip.warn.length} filas no se han podido leer</span> (ver abajo).` : "Sin avisos."}
     La columna «Lo que entiendo» es lo que se usará para el horario. Las parejas se guardan también en Inscripciones (las que ya estaban no se duplican).</p>
     ${ip.warn.length ? `<p class="small" style="color:var(--warn);margin:0">${ip.warn.map(esc).join("<br>")}</p>` : ""}
     <div class="row"><button class="btn primary" data-act="import-replace">${mine ? "Sustituir mis parejas por estas" : "Usar estas parejas y generar horario"}</button>
@@ -1718,9 +1718,10 @@ async function readExcelFile(file){
     toast("Leyendo el Excel…");
     await loadXLSX();
     const wb = XLSX.read(await file.arrayBuffer(), {type: "array"});
-    let rows = [];
-    wb.SheetNames.forEach(n => { rows = rows.concat(XLSX.utils.sheet_to_json(wb.Sheets[n], {header: 1, defval: null, raw: false}), [[]]); });
-    const res = rowsToPairs(rows);
+    /* cada hoja por separado: las que no tienen fila de títulos (p. ej. «Instrucciones») se ignoran */
+    const hojas = wb.SheetNames.map(n => ({n, ...rowsToPairs(XLSX.utils.sheet_to_json(wb.Sheets[n], {header: 1, defval: null, raw: false}))})).filter(h => h.hdr);
+    const res = !hojas.length ? {items: [], warn: ["No encuentro la fila de títulos (Jugador 1, Jugador 2, Nivel, Disponibilidad)"]}
+      : {items: hojas.flatMap(h => h.items), warn: hojas.flatMap(h => h.warn.map(w => hojas.length > 1 ? `${h.n} · ${w}` : w))};
     if(!res.items.length){ toast(res.warn[0] || "No he encontrado parejas en ese archivo"); return; }
     importPreview = {file: file.name, items: res.items, warn: res.warn};
     editing = null; renderParejas(); window.scrollTo({top: 0});
