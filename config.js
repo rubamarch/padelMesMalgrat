@@ -6,7 +6,7 @@
  */
 window.APP_CONFIG = {
   club: "Padel Mes Malgrat",
-  tagline: "by Mily Daub",   // aparece bajo el nombre del club
+  tagline: "by Mily Daud",   // aparece bajo el nombre del club
   contacto: {                          // datos por defecto del pie (se cambian desde la pestaña Club; las imágenes se suben allí)
     telefono: "937 611 533",
     email: "mesmalgrat@mesmalgrat.com",

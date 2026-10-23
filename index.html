@@ -501,7 +501,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   #insgrid td.d .tn button:last-child{color:var(--muted)}
   .desliza{display:none;font-size:12px;color:var(--muted);margin:0}
   @media (max-width:600px){.desliza{display:block}}
-  /* ===================== identidad Padel Mes Malgrat · by Mily Daub ===================== */
+  /* ===================== identidad Padel Mes Malgrat · by Mily Daud ===================== */
   /* Marino + azul vivo + lima pelota, Manrope en títulos, botones píldora, foto del club en la cabecera */
   :root { --navy: #003366; --night: #002247; --ball: #dce569; --ball-ink: #29554d; --display2: "Manrope", "Golos Text", sans-serif; }
   h1, h2, h3 { font-family: var(--display2); }
@@ -630,7 +630,9 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   table.cross td b,table.cross td span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
   table.cross td b{font-size:.82rem;line-height:1.15}
   table.cross td span{font-size:.68rem;line-height:1.15}
-  table.cross .pad{background:var(--surface-2)}
+  table.cross{border-collapse:collapse}
+  table.cross th,table.cross td{box-sizing:border-box}
+  table.cross tr{height:42px}
   .cuadro{gap:10px}
   .cuadro .ctitle{font-size:1.15rem;padding:6px 12px}
   .pdf .cell.dim{visibility:hidden}
@@ -1550,10 +1552,6 @@ function renderCuadros(){
   let h = `<div class="row"><span class="spacer"></span>${ADMIN ? `<button class="btn" data-act="export-csv">Descargar CSV</button><button class="btn" data-act="copy-sheet">Copiar para Excel</button>` : ""}<button class="btn" data-act="pdf" data-what="cuadros">Descargar PDF</button></div>${gchips(gs)}`;
   if(!sch) h += `<div class="notice"><span>Genera el horario para ver las horas en los cuadros.</span></div>`;
   const visibles = gs.filter(g => !gsel.size || gsel.has(g.key));
-  const maxCols = Math.max(1, ...visibles.flatMap(g => {
-    const ps = state.pairs.filter(p => gkey(p) === g.key), k = cfg.subSize ? subCount(g.key) : 1;
-    return Array.from({length: k}, (_, j) => (cfg.subSize ? ps.filter(p => subOf(p) === j + 1) : ps).length);
-  }));
   visibles.forEach(g => {
     const ps = state.pairs.filter(p => gkey(p) === g.key); if(!ps.length) return;
     const k = cfg.subSize ? subCount(g.key) : 1;
@@ -1561,7 +1559,7 @@ function renderCuadros(){
     for(let i = 1; i <= k; i++){
       const list = cfg.subSize ? ps.filter(p => subOf(p) === i) : ps;
       if(!list.length) continue;
-      h += `<div class="scroll"><table class="cross" style="width:${210 + 118 * maxCols}px"><colgroup><col style="width:210px">${Array.from({length: maxCols}, () => `<col style="width:118px">`).join("")}</colgroup><thead><tr><th class="gname s${(i-1)%4}">GRUPO ${i}</th>${list.map(p => `<th class="colh" title="${esc(pname(p))}">${esc(pshort(p))}</th>`).join("")}${`<th class="pad"></th>`.repeat(maxCols - list.length)}</tr></thead><tbody>`;
+      h += `<div class="scroll"><table class="cross" style="width:${210 + 118 * list.length}px"><colgroup><col style="width:210px">${list.map(() => `<col style="width:118px">`).join("")}</colgroup><thead><tr><th class="gname s${(i-1)%4}">GRUPO ${i}</th>${list.map(p => `<th class="colh" title="${esc(pname(p))}">${esc(pshort(p))}</th>`).join("")}</tr></thead><tbody>`;
       list.forEach(p => {
         h += `<tr><th class="rowh" title="${esc(pname(p))}"><b>${esc(pname(p))}</b></th>`;
         list.forEach(q => {
@@ -1577,9 +1575,8 @@ function renderCuadros(){
             h += `<td class="none" title="${esc(tip)}"><b>Sin hora</b><span>${common ? "Coinciden " + esc(common) + ", pero no queda pista" : "No coinciden"}</span></td>`;
           } else h += `<td class="muted">–</td>`;
         });
-        h += `${`<td class="pad"></td>`.repeat(maxCols - list.length)}</tr>`;
+        h += `</tr>`;
       });
-      for(let r = list.length; r < maxCols; r++) h += `<tr><th class="rowh pad"></th>${`<td class="pad"></td>`.repeat(maxCols)}</tr>`;
       h += `</tbody></table></div>`;
     }
     const fm = fplan.placed.filter(m => m.g === g.key);
