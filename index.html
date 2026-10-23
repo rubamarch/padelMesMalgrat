@@ -2174,7 +2174,7 @@ const API = {
 const msgErr = e => (e && e.message ? String(e.message).replace(/^Error:\s*/, "").replace(/^Exception:\s*/, "") : "Algo ha fallado. Inténtalo de nuevo.");
 
 const fotosDemo = {};
-let ajustesDemo = {email: "info@padelmesmalgrat.cat", telefono: "600 000 000", direccion: "Malgrat de Mar", instagram: "padelmesmalgrat"};
+let ajustesDemo = {};
 const DEMO = (() => {
   const ts = [
     {id: "open-octubre", nombre: "Open de Octubre", fechas: "22–25 octubre 2026", lugar: "Pistas 1–3", precio: "18 € / jugador", plazas: 32, estado: "juego", descripcion: "Liguilla por grupos de jueves a sábado y fases finales el domingo por la mañana.", cartel: ""},
@@ -2340,18 +2340,24 @@ const IC = {
   ig: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>',
 };
 const igUser = v => String(v || "").trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/\/.*$/, "");
+function clubDatos(){
+  const c = {portada: APP.portada || "", logo: APP.logo || "", ...(APP.contacto || {})};
+  for(const k in CLUBA) if(CLUBA[k]) c[k] = CLUBA[k];
+  return c;
+}
 function aplicarClub(){
+  const C = clubDatos();
   const h = document.querySelector(".hero");
-  h.classList.toggle("con-foto", !!CLUBA.portada);
-  h.style.setProperty("--hero-img", CLUBA.portada ? `url("${encodeURI(CLUBA.portada)}")` : "none");
-  const lg = $("#logo"); lg.classList.toggle("con-img", !!CLUBA.logo);
-  lg.innerHTML = CLUBA.logo ? `<img src="${esc(CLUBA.logo)}" alt="">` : LOGO_SVG;
-  $("#pie-logo").innerHTML = CLUBA.logo ? `<img src="${esc(CLUBA.logo)}" alt="Logo de ${esc(CLUB)}">` : "";
+  h.classList.toggle("con-foto", !!C.portada);
+  h.style.setProperty("--hero-img", C.portada ? `url("${encodeURI(C.portada)}")` : "none");
+  const lg = $("#logo"); lg.classList.toggle("con-img", !!C.logo);
+  lg.innerHTML = C.logo ? `<img src="${esc(C.logo)}" alt="">` : LOGO_SVG;
+  $("#pie-logo").innerHTML = C.logo ? `<img src="${esc(C.logo)}" alt="Logo de ${esc(CLUB)}">` : "";
   const c = [];
-  if(CLUBA.email) c.push(`<a class="pcard" href="mailto:${esc(CLUBA.email)}"><i>${IC.mail}</i><span><small>Correo</small><b>${esc(CLUBA.email)}</b></span></a>`);
-  if(CLUBA.telefono) c.push(`<a class="pcard" href="tel:${esc(CLUBA.telefono.replace(/\s+/g, ""))}"><i>${IC.tel}</i><span><small>Teléfono</small><b>${esc(CLUBA.telefono)}</b></span></a>`);
-  if(CLUBA.direccion) c.push(`<a class="pcard" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(CLUBA.direccion)}" target="_blank" rel="noopener"><i>${ICON.pin}</i><span><small>Dónde estamos</small><b>${esc(CLUBA.direccion)}</b></span></a>`);
-  if(igUser(CLUBA.instagram)) c.push(`<a class="pcard" href="https://www.instagram.com/${encodeURIComponent(igUser(CLUBA.instagram))}/" target="_blank" rel="noopener"><i>${IC.ig}</i><span><small>Instagram</small><b>@${esc(igUser(CLUBA.instagram))}</b></span></a>`);
+  if(C.email) c.push(`<a class="pcard" href="mailto:${esc(C.email)}"><i>${IC.mail}</i><span><small>Correo</small><b>${esc(C.email)}</b></span></a>`);
+  if(C.telefono) c.push(`<a class="pcard" href="tel:${esc(C.telefono.replace(/\s+/g, ""))}"><i>${IC.tel}</i><span><small>Teléfono</small><b>${esc(C.telefono)}</b></span></a>`);
+  if(C.direccion) c.push(`<a class="pcard" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(C.direccion)}" target="_blank" rel="noopener"><i>${ICON.pin}</i><span><small>Dónde estamos</small><b>${esc(C.direccion)}</b></span></a>`);
+  if(igUser(C.instagram)) c.push(`<a class="pcard" href="https://www.instagram.com/${encodeURIComponent(igUser(C.instagram))}/" target="_blank" rel="noopener"><i>${IC.ig}</i><span><small>Instagram</small><b>@${esc(igUser(C.instagram))}</b></span></a>`);
   $("#pie-contacto").innerHTML = c.join("");
 }
 async function cargarClub(){ try{ CLUBA = await llamar("getAjustes") || {}; }catch(e){ CLUBA = {}; } aplicarClub(); }
@@ -2361,16 +2367,16 @@ async function guardarClub(cambios){
   catch(e){ toast("No se ha guardado: " + (/ajustes/i.test(msgErr(e)) ? "falta actualizar la base de datos (vuelve a ejecutar schema.sql en Supabase)." : msgErr(e))); return false; }
 }
 function renderClubCfg(){
-  const campo = (k, l, ph, type = "text") => `<div class="campo"><label for="cl-${k}">${l}</label><input class="in cl" type="${type}" id="cl-${k}" data-k="${k}" value="${esc(CLUBA[k] || "")}" placeholder="${esc(ph)}"></div>`;
+  const campo = (k, l, ph, type = "text") => `<div class="campo"><label for="cl-${k}">${l}</label><input class="in cl" type="${type}" id="cl-${k}" data-k="${k}" value="${esc(CLUBA[k] || "")}" placeholder="${esc((APP.contacto || {})[k] || ph)}"></div>`;
   $("#club-cfg").innerHTML = `<div class="card"><div><h2>Imagen del club</h2><p class="lead">La foto de portada sale en la cabecera de la web y el logo en el menú y en el pie. Mejor una foto horizontal de las pistas.</p></div>
     <div class="grid-2">
-      <div class="campo"><span class="etq">Foto de portada</span><div class="club-img">${CLUBA.portada ? `<img src="${esc(CLUBA.portada)}" alt="Foto de portada">` : "Sin foto: se usa el fondo azul con la pista y la pelota"}</div>
+      <div class="campo"><span class="etq">Foto de portada</span><div class="club-img">${clubDatos().portada ? `<img src="${esc(clubDatos().portada)}" alt="Foto de portada">` : "Sin foto: se usa el fondo azul con la pista y la pelota"}</div>${!CLUBA.portada && APP.portada ? `<span class="lead small">Foto por defecto de la web. Sube otra para cambiarla.</span>` : ""}
         <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="b b-soft" for="club-portada" style="cursor:pointer">Subir foto</label><input type="file" id="club-portada" accept="image/*" hidden>${CLUBA.portada ? `<button type="button" class="b b-ghost" data-act="club-quitar" data-k="portada">Quitar</button>` : ""}</div></div>
       <div class="campo"><span class="etq">Logo</span><div class="club-img logo-prev">${CLUBA.logo ? `<img src="${esc(CLUBA.logo)}" alt="Logo">` : `<span style="color:rgba(255,255,255,.7)">Sin logo</span>`}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="b b-soft" for="club-logo" style="cursor:pointer">Subir logo</label><input type="file" id="club-logo" accept="image/*" hidden>${CLUBA.logo ? `<button type="button" class="b b-ghost" data-act="club-quitar" data-k="logo">Quitar</button>` : ""}</div>
         <span class="lead small">Mejor PNG con fondo transparente.</span></div>
     </div></div>
-    <div class="card"><div><h2>Contacto</h2><p class="lead">Sale en el pie de la web. Deja vacío lo que no quieras mostrar.</p></div>
+    <div class="card"><div><h2>Contacto</h2><p class="lead">Sale en el pie de la web. Si dejas un campo vacío se usa el dato de config.js (en gris).</p></div>
       <div class="grid-2">${campo("email", "Correo", "info@tuclub.com", "email")}${campo("telefono", "Teléfono", "600 000 000", "tel")}${campo("direccion", "Dirección", "Calle, número, Malgrat de Mar")}${campo("instagram", "Instagram", "@padelmesmalgrat")}</div>
       <div><button type="button" class="b b-primary" data-act="club-guardar">Guardar contacto</button></div></div>`;
 }

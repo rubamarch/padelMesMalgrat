@@ -7,6 +7,12 @@
 window.APP_CONFIG = {
   club: "Padel Mes Malgrat",
   tagline: "by Mily Daub",   // aparece bajo el nombre del club
+  portada: "img/portada-pistas.jpg",   // foto de cabecera por defecto (se cambia desde la pestaña Club)
+  contacto: {                          // datos por defecto del pie (se cambian desde la pestaña Club)
+    telefono: "937 611 533",
+    email: "mesmalgrat@mesmalgrat.com",
+    direccion: "Avinguda Josep Ragull i Vilaró 13, 08380 Malgrat de Mar",
+  },
   supabaseUrl: "https://wffvsnrghjefikgmxclc.supabase.co",      // Supabase → Project Settings → API → Project URL
   supabaseAnonKey: "sb_publishable_hrPCzG9mI-3ecQvKEFc3OQ_yJ9Z06tU",  // Supabase → Project Settings → API → anon public
 };
