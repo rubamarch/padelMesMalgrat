@@ -711,6 +711,64 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.85em;background:var(
   .foto img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block;background:var(--surface-2)}
   .foto figcaption{display:flex;justify-content:space-between;gap:8px}
 
+  /* ---------- móvil: todo cabe en pantalla, sin scroll lateral ---------- */
+  .pie-in { padding: 26px clamp(18px, 4vw, 34px); gap: 20px; }
+  .pie { padding-block: 32px 12px; }
+  .pcard { padding: 9px 12px; }
+  .pcard i { width: 32px; height: 32px; }
+  .pie-club { font-size: 1.4rem; }
+  .gfil-m { display: none; }
+  @media (max-width: 640px) {
+    .gfil-m { display: block; width: 100%; }
+    .gfil { display: none; }
+    .tabs-in { flex-wrap: wrap; overflow: visible; justify-content: center; border-radius: 20px; gap: 2px; padding: 4px; }
+    .tab { padding: 7px 11px; font-size: 13px; }
+    .sync { flex-basis: 100%; text-align: center; margin: 0; padding: 0 0 2px; font-size: 11px; }
+    .scroll { overflow-x: visible; }
+    table.grid { min-width: 0; table-layout: fixed; border-spacing: 3px; }
+    table.grid th { font-size: .66rem; padding: 2px 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    table.grid td.time { width: 42px; font-size: .78rem; padding-top: 5px; }
+    table.grid td.time small { font-size: .58rem; }
+    .cell { min-height: 50px; padding: 4px 5px; border-radius: 7px; }
+    .cell .vs { font-size: .68rem; line-height: 1.2; overflow-wrap: anywhere; }
+    .cell .vs i { font-size: .62rem; }
+    .cell .tag { font-size: .6rem; gap: 3px; flex-wrap: wrap; letter-spacing: .02em; }
+    .cell .pin { font-size: .5rem; padding: 0 3px; }
+    .cell.empty, .cell.final { font-size: .62rem; letter-spacing: 0; }
+    table.cross.compacto .rowh b { white-space: normal; font-size: .7rem; line-height: 1.2; overflow: visible; }
+    table.cross.compacto th, table.cross.compacto td { padding: 2px 3px; height: auto; min-height: 38px; }
+    table.cross.compacto tr { height: 38px; }
+    table.cross.compacto .colh { font-size: .72rem; text-align: center; }
+    table.cross.compacto .gname { font-size: .74rem; }
+    table.cross.compacto td b { font-size: .64rem; }
+    table.cross.compacto td span { font-size: .56rem; }
+    table.cross .num { font-weight: 800; margin-right: 3px; color: var(--muted); }
+    .avail { overflow: visible; }
+    .avail table { width: 100%; table-layout: fixed; border-spacing: 1px; }
+    .avail th { font-size: .5rem; text-align: center; }
+    .avail td.d { width: 34px; padding-right: 2px; font-size: .78rem; cursor: pointer; text-decoration: underline dotted; }
+    .avail td.q, .avail th:last-child { display: none; }
+    .avail .c { width: 100%; height: 26px; border-radius: 2px; }
+    .tscroll { overflow-x: visible; }
+    table.ins { min-width: 0; }
+    table.ins thead { display: none; }
+    table.ins, table.ins tbody, table.ins tr, table.ins td { display: block; width: 100%; }
+    table.ins tr { border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; margin-bottom: 8px; }
+    table.ins td { border: 0; padding: 3px 0; }
+    .pie { padding-block: 20px 8px; }
+    .pie-in { padding: 14px 14px; gap: 8px; border-radius: 20px; }
+    .pie-marca { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+    .pie-marca .link { margin-left: auto; font-size: .74rem; }
+    .pie-logo img { max-height: 36px; max-width: 110px; }
+    .pie-club { font-size: 1.1rem; }
+    .pie-by { font-size: .66rem; }
+    .pie-contacto { gap: 6px; }
+    .pcard { padding: 5px 10px; gap: 9px; border-radius: 11px; }
+    .pcard i { width: 24px; height: 24px; }
+    .pcard i svg { width: 13px; height: 13px; }
+    .pcard small { display: none; }
+    .pcard b { font-size: .8rem; line-height: 1.25; }
+  }
 </style>
 
 <script src="config.js"></script>
@@ -1564,7 +1622,8 @@ function matchVisible(m){ return !gsel.size || gsel.has(m.g); }
 function gchips(gs){
   const used = gs.filter(g => state.pairs.some(p => gkey(p) === g.key));
   if(!used.length) return "";
-  return `<div class="legend gfil${gsel.size ? " some" : ""}" role="group" aria-label="Filtrar por categoría"><button type="button" class="chip gall${gsel.size ? "" : " on"}" data-act="gsel" data-g="">Todas</button>${used.map(g => `<button type="button" class="chip ${g.cls}${gsel.has(g.key) ? " on" : ""}" data-act="gsel" data-g="${esc(g.key)}" aria-pressed="${gsel.has(g.key)}">${esc(g.label)}</button>`).join("")}</div>`;
+  const cur = [...gsel][0] || "";
+  return `<select class="in gfil-m" aria-label="Categoría"><option value="">Todas las categorías</option>${used.map(g => `<option value="${esc(g.key)}"${g.key === cur ? " selected" : ""}>${esc(g.label)}</option>`).join("")}</select><div class="legend gfil${gsel.size ? " some" : ""}" role="group" aria-label="Filtrar por categoría"><button type="button" class="chip gall${gsel.size ? "" : " on"}" data-act="gsel" data-g="">Todas</button>${used.map(g => `<button type="button" class="chip ${g.cls}${gsel.has(g.key) ? " on" : ""}" data-act="gsel" data-g="${esc(g.key)}" aria-pressed="${gsel.has(g.key)}">${esc(g.label)}</button>`).join("")}</div>`;
 }
 function renderHorario(){
   const el = $("#v-horario"), sch = state.schedule, cfg = state.config;
@@ -1876,6 +1935,8 @@ function commonText(a, b){
   });
   return parts.join(" · ");
 }
+let anchoCuadros = 0;
+addEventListener("resize", () => { clearTimeout(anchoCuadros); anchoCuadros = setTimeout(() => { const el = document.getElementById("v-cuadros"); if(el && el.offsetParent && state) renderCuadros(); }, 200); });
 const medirTxt = (t, w, px) => { const c = medirTxt.c ||= document.createElement("canvas").getContext("2d"); c.font = `${w} ${px}px "Golos Text", system-ui, sans-serif`; return Math.ceil(c.measureText(String(t)).width); };
 function renderCuadros(){
   const el = $("#v-cuadros"), cfg = state.config, sch = state.schedule, gs = groups();
@@ -1885,9 +1946,13 @@ function renderCuadros(){
   const visibles = gs.filter(g => !gsel.size || gsel.has(g.key));
   /* mismo tamaño de celda en todos los cuadros: lo justo para que quepan los nombres, aprovechando el ancho disponible */
   const listas = []; visibles.forEach(g => { const ps = state.pairs.filter(p => gkey(p) === g.key), k = cfg.subSize ? subCount(g.key) : 1; for(let i = 1; i <= k; i++){ const l = cfg.subSize ? ps.filter(p => subOf(p) === i) : ps; if(l.length) listas.push(l); } });
-  const todas = listas.flat(), maxN = Math.max(1, ...listas.map(l => l.length)), ancho = Math.max(320, (el.clientWidth || el.parentElement.clientWidth || 1100) - 4);
+  const todas = listas.flat(), maxN = Math.max(1, ...listas.map(l => l.length)), ancho = Math.max(320, (el.clientWidth || (el.parentElement && el.parentElement.clientWidth) || document.documentElement.clientWidth - 32) - 4);
   const colNom = Math.min(360, Math.max(210, ...todas.map(p => medirTxt(pname(p), 600, 14) + 28)));
-  const celda = Math.min(240, Math.max(118, ...todas.map(p => medirTxt(pshort(p), 600, 12.8) + 24), Math.floor((ancho - colNom) / maxN)));
+  let celda = Math.min(240, Math.max(118, ...todas.map(p => medirTxt(pshort(p), 600, 12.8) + 24), Math.floor((ancho - colNom) / maxN)));
+  /* pantalla estrecha: columnas numeradas y todo dentro del ancho */
+  const compacto = colNom + celda * maxN > ancho && matchMedia("(max-width: 640px)").matches;
+  let colN = colNom;
+  if(compacto){ colN = Math.round(Math.min(150, Math.max(96, ancho * .34))); celda = Math.floor((ancho - colN) / maxN); }
   visibles.forEach(g => {
     const ps = state.pairs.filter(p => gkey(p) === g.key); if(!ps.length) return;
     const k = cfg.subSize ? subCount(g.key) : 1;
@@ -1895,9 +1960,9 @@ function renderCuadros(){
     for(let i = 1; i <= k; i++){
       const list = cfg.subSize ? ps.filter(p => subOf(p) === i) : ps;
       if(!list.length) continue;
-      h += `<div class="scroll"><table class="cross" style="width:${colNom + celda * list.length}px"><colgroup><col style="width:${colNom}px">${list.map(() => `<col style="width:${celda}px">`).join("")}</colgroup><thead><tr><th class="gname s${(i-1)%4}">GRUPO ${i}</th>${list.map(p => `<th class="colh" title="${esc(pname(p))}">${esc(pshort(p))}</th>`).join("")}</tr></thead><tbody>`;
-      list.forEach(p => {
-        h += `<tr><th class="rowh" title="${esc(pname(p))}"><b>${esc(pname(p))}</b></th>`;
+      h += `<div class="scroll"><table class="cross${compacto ? " compacto" : ""}" style="width:${colN + celda * list.length}px"><colgroup><col style="width:${colN}px">${list.map(() => `<col style="width:${celda}px">`).join("")}</colgroup><thead><tr><th class="gname s${(i-1)%4}">GRUPO ${i}</th>${list.map((p, j) => `<th class="colh" title="${esc(pname(p))}">${compacto ? j + 1 : esc(pshort(p))}</th>`).join("")}</tr></thead><tbody>`;
+      list.forEach((p, j) => {
+        h += `<tr><th class="rowh" title="${esc(pname(p))}"><b>${compacto ? `<span class="num">${j + 1}</span>` : ""}${esc(pname(p))}</b></th>`;
         list.forEach(q => {
           if(p === q){ h += `<td class="diag"></td>`; return; }
           const m = sch && sch.matches.find(x => (x.a === p.id && x.b === q.id) || (x.a === q.id && x.b === p.id));
@@ -2083,7 +2148,7 @@ function renderEditor(){
     grid += `<th></th></tr></thead><tbody>`;
     days.forEach(d => {
       const set = new Set(e.avail[d.id] || []);
-      grid += `<tr><td class="d">${esc(dshort(d))}</td>`;
+      grid += `<tr><td class="d" data-act="day-toggle" data-d="${d.id}" title="Todo / nada">${esc(dshort(d))}</td>`;
       for(let t = h0; t < maxT; t += 60){
         const halves = [t, t + 30].filter(x => x >= d.start && x + 30 <= d.end);
         const on = halves.length && halves.every(x => set.has(x));
@@ -2452,10 +2517,10 @@ document.addEventListener("click", async e => {
     renderParejas(); window.scrollTo({top: 0});
   }
   else if(act === "cancel-edit"){ editing = null; renderParejas(); }
-  else if(act === "day-all" || act === "day-none"){
+  else if(act === "day-all" || act === "day-none" || act === "day-toggle"){
     readEditorFields();
-    const d = dayById(b.dataset.d), cells = [];
-    if(act === "day-all") for(let t = d.start; t + 30 <= d.end; t += 30) cells.push(t);
+    const d = dayById(b.dataset.d), cells = [], n = Math.floor((d.end - d.start) / 30);
+    if(act === "day-all" || (act === "day-toggle" && (editing.avail[d.id] || []).length < n)) for(let t = d.start; t + 30 <= d.end; t += 30) cells.push(t);
     editing.avail[d.id] = cells; renderParejas();
   }
   else if(act === "save-pair"){
@@ -3431,6 +3496,7 @@ async function onDatesChanged(){
   catch(err){ toast("No se han guardado las fechas: " + msgErr(err)); }
 }
 document.addEventListener("change", async e => {
+  if(e.target.classList && e.target.classList.contains("gfil-m")){ gsel = e.target.value ? new Set([e.target.value]) : new Set(); abrirDiasDelFiltro(); renderAll(); return; }
   if(e.target.name === "cl-tema" && ADMIN){
     const antes = CLUBA.tema, v = e.target.value === "auto" ? "" : e.target.value;
     CLUBA.tema = v; aplicarTema();
