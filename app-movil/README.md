@@ -12,6 +12,9 @@ y la deja en **Releases → App Android** del repositorio:
 
 https://github.com/rubamarch/padelMesMalgrat/releases/tag/app-android
 
+Enlace directo al APK (siempre la última versión):
+https://github.com/rubamarch/padelMesMalgrat/releases/download/app-android/mes-malgrat.apk
+
 Ábrelo desde el móvil, descarga `mes-malgrat.apk` e instálalo. Android pedirá permiso para instalar apps de esa
 fuente (Chrome o Archivos). Las siguientes versiones se instalan encima, sin desinstalar.
 
