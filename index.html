@@ -2113,8 +2113,10 @@ async function exportarExcel(){
     const wsA = XLSX.utils.aoa_to_sheet(ayuda); wsA["!cols"] = [{wch: 28}, {wch: 60}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Parejas"); XLSX.utils.book_append_sheet(wb, wsA, "Instrucciones");
-    XLSX.writeFile(wb, (ps.length ? "" : "plantilla-") + "parejas-" + (T ? slug(T.nombre) : "torneo") + ".xlsx");
-    toast(ps.length ? `${ps.length} pareja${ps.length > 1 ? "s" : ""} exportada${ps.length > 1 ? "s" : ""}` : "Plantilla descargada");
+    const nombre = (ps.length ? "" : "plantilla-") + "parejas-" + (T ? slug(T.nombre) : "torneo") + ".xlsx";
+    const aviso = ps.length ? `${ps.length} pareja${ps.length > 1 ? "s" : ""} exportada${ps.length > 1 ? "s" : ""}` : "Plantilla descargada";
+    if(NATIVO) await descargar(new Blob([XLSX.write(wb, {type: "array", bookType: "xlsx"})], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}), nombre, aviso);
+    else { XLSX.writeFile(wb, nombre); toast(aviso); }
   }catch(err){
     toast(err && err.message === "no-lib" ? "No se ha podido cargar el generador de Excel. Comprueba la conexión." : "No se ha podido crear el Excel.");
   }
@@ -2509,7 +2511,8 @@ document.addEventListener("click", async e => {
   else if(act === "unpin-all"){ state.schedule.matches.forEach(m => m.pinned = false); Object.values(state.finalsPos || {}).forEach(f => f.m = false); save(); renderHorario(); toast("Ningún partido fijado"); }
   else if(act === "export-csv"){
     const csv = "﻿" + [HEAD, ...scheduleRows()].map(r => r.map(v => /[;"\n]/.test(v) ? `"${v.replace(/"/g,'""')}"` : v).join(";")).join("\r\n");
-    if(downloads){
+    if(NATIVO) await descargar(new Blob([csv], {type: "text/csv"}), "horario-torneo-padel.csv", "Descargado");
+    else if(downloads){
       try{ await downloads.save({filename: "horario-torneo-padel.csv", data: csv}); toast("Descargado"); }
       catch(err){ if(err && err.code !== "declined") copyText(csv.slice(1)); }
     } else copyText(csv.slice(1));
@@ -2593,6 +2596,20 @@ document.addEventListener("change", e => {
    App: portada de torneos, página de torneo, inscripción y organizador
    ===================================================================== */
 const APP = window.APP_CONFIG || {};
+/* ---------- dentro de la app nativa (Capacitor) ---------- */
+const NATIVO = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const WEB_URL = APP.webUrl || "https://rubamarch.github.io/padelMesMalgrat/";
+const plugin = n => (window.Capacitor.Plugins && window.Capacitor.Plugins[n]) || window.Capacitor.registerPlugin(n);
+if(NATIVO){
+  document.documentElement.classList.add("nativo");
+  try{
+    plugin("App").addListener("backButton", () => {
+      const modal = [...document.querySelectorAll(".modal")].find(m => !m.hidden);
+      if(modal){ modal.hidden = true; return; }
+      if(location.hash) history.back(); else plugin("App").exitApp();
+    });
+  }catch(e){}
+}
 const CLUB = APP.club || "Club de Pádel";
 const INICIAL = decodeURIComponent(location.hash.slice(1));
 const SB = APP.supabaseUrl && APP.supabaseAnonKey && window.supabase ? window.supabase.createClient(APP.supabaseUrl, APP.supabaseAnonKey) : null;
@@ -2769,7 +2786,7 @@ function ctaTxt(t){
   return "Ver torneo";
 }
 function copiarEnlace(id){
-  const enlace = location.href.split("#")[0] + "#" + encodeURIComponent(id);
+  const enlace = (NATIVO ? WEB_URL : location.href.split("#")[0]) + "#" + encodeURIComponent(id);
   copyText(enlace);
 }
 
@@ -2906,10 +2923,19 @@ function libsPDF(){
     window.jspdf ? 0 : cargarScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"),
   ]).catch(e => { pdfLibs = null; throw e; });
 }
-function descargar(blob, name){
+async function descargar(blob, name, aviso = "PDF descargado"){
+  if(NATIVO){
+    /* en la app no hay descargas: se guarda el archivo y se abre el menú de compartir (WhatsApp, Drive, correo…) */
+    try{
+      const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(blob); });
+      const f = await plugin("Filesystem").writeFile({path: name, data, directory: "CACHE"});
+      await plugin("Share").share({title: name, files: [f.uri]});
+    }catch(e){ if(!/cancel/i.test(String(e && (e.message || e)))) toast("No se ha podido compartir el archivo"); }
+    return;
+  }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  toast("PDF descargado");
+  toast(aviso);
 }
 async function guardarPDF(what, btn){
   const txt = btn.textContent; btn.disabled = true; btn.textContent = "Preparando PDF…";

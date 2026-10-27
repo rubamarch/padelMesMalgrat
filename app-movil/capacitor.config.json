@@ -1,0 +1,10 @@
+{
+  "appId": "com.mesmalgrat.torneos",
+  "appName": "Mes Malgrat",
+  "webDir": "www",
+  "android": { "backgroundColor": "#ffffff" },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 1000, "launchAutoHide": true, "backgroundColor": "#ffffff", "showSpinner": false, "androidScaleType": "CENTER_INSIDE" },
+    "StatusBar": { "style": "DARK", "backgroundColor": "#003366", "overlaysWebView": false }
+  }
+}

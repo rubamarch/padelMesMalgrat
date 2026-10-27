@@ -1,33 +1,53 @@
 # App móvil
 
-La web se puede instalar como una app en el móvil: icono del club en la pantalla de inicio, se abre a pantalla
-completa sin la barra del navegador y se actualiza sola cada vez que cambia la web (no hay que volver a instalarla).
+App nativa de **Mes Malgrat** para Android (y más adelante iPhone), hecha con [Capacitor](https://capacitorjs.com).
+La web (`index.html` y `config.js`) va **dentro** de la app: se instala desde un APK o desde Google Play, arranca con
+la pantalla del logo, tiene el botón atrás de Android, y los PDF y Excel se comparten con el menú del móvil
+(WhatsApp, Drive, correo…). Los datos (torneos, horarios, parejas) salen de Supabase, igual que en la web.
+
+## Descargar la app de prueba
+
+Cada vez que cambia la web o esta carpeta, GitHub compila la app sola (pestaña **Actions → App Android**, unos 5 min)
+y la deja en **Releases → App Android** del repositorio:
+
+https://github.com/rubamarch/padelMesMalgrat/releases/tag/app-android
+
+Ábrelo desde el móvil, descarga `mes-malgrat.apk` e instálalo. Android pedirá permiso para instalar apps de esa
+fuente (Chrome o Archivos). Las siguientes versiones se instalan encima, sin desinstalar.
+
+## Archivos
 
 | Archivo | Para qué |
 |---|---|
-| `manifest.webmanifest` | Nombre, colores e iconos de la app. Lo enlaza `index.html` |
-| `iconos/icon-192.png`, `iconos/icon-512.png` | Icono normal (logo sobre fondo transparente) |
-| `iconos/maskable-512.png` | Icono para Android: logo sobre blanco con margen, para que el móvil lo recorte en círculo o cuadrado sin cortar las letras |
-| `iconos/apple-touch-icon.png` | Icono para iPhone (sin transparencia) |
+| `capacitor.config.json` | Nombre de la app, identificador (`com.mesmalgrat.torneos`), pantalla de arranque y barra de estado |
+| `package.json` | Versiones de Capacitor y sus módulos |
+| `scripts/preparar.mjs` | Copia la web a `www/` y genera el icono adaptativo y la pantalla de arranque a partir del logo |
+| `iconos/` | El logo en varios tamaños: icono de la app, de la web instalada y del iPhone |
+| `manifest.webmanifest` | Para instalar la web desde el navegador (sigue funcionando aparte de la app) |
+| `debug.keystore` | Firma de las versiones **de prueba** (es pública a propósito). Para Google Play se usará otra firma, privada, que no va en el repositorio |
+| `../.github/workflows/app-android.yml` | La compilación automática (GitHub obliga a que esté en esa carpeta) |
 
-Son las únicas imágenes del repositorio: las demás (logo de la web, portada, carátula) se suben desde la pestaña *Club*.
+`android/`, `www/`, `assets/` y `node_modules/` se generan al compilar y no se suben.
 
-## Instalarla sin tienda
+## Compilar en un ordenador (opcional)
 
-- **Android (Chrome):** abre https://rubamarch.github.io/padelMesMalgrat/ → menú ⋮ → **Instalar aplicación**.
-- **iPhone (Safari):** abre la web → botón compartir → **Añadir a pantalla de inicio**.
+Hace falta Node 22, Java 21 y el Android SDK (o Android Studio):
 
-## Crear la APK y subirla a Google Play
+```bash
+cd app-movil
+npm ci
+npm run android          # crea android/ con la web, iconos y pantalla de arranque
+cd android && ./gradlew assembleDebug
+# APK en android/app/build/outputs/apk/debug/app-debug.apk
+```
 
-1. Entra en https://www.pwabuilder.com, pega `https://rubamarch.github.io/padelMesMalgrat/` y pulsa **Start**.
-2. **Package for stores → Android → Generate package**. Deja el *Package ID* que propone o pon uno tuyo
-   (por ejemplo `com.mesmalgrat.torneos`) y **guárdalo: no se puede cambiar después**.
-3. Descarga el ZIP. Dentro están:
-   - el archivo `.aab` (es el que se sube a Google Play) y un `.apk` para probarla en tu móvil;
-   - `signing.keystore` y `signing-key-info.txt`: **guárdalos en un sitio seguro y NO los subas a GitHub**.
-     Sin ellos no podrás publicar actualizaciones de la app con el mismo nombre.
-   - `assetlinks.json`: para que la app se abra sin la barra del navegador (paso 5).
-4. Crea la cuenta en https://play.google.com/console (pago único de 25 $), crea la app y sube el `.aab`.
-5. Pásame el `assetlinks.json` y lo coloco en la web. Hay que ponerlo en
-   `https://rubamarch.github.io/.well-known/assetlinks.json`, que es otro repositorio (`rubamarch.github.io`),
-   no este. Si no se pone, la app funciona igual pero enseña una barra pequeña con la dirección arriba.
+## Próximos pasos
+
+1. Notificaciones push (horario publicado, recordatorio del partido).
+2. Google Play: cuenta de desarrollador (25 $, pago único) y firma privada de publicación.
+3. iPhone / App Store (99 $/año). Se compila en la nube porque hace falta un Mac.
+
+## Instalar la web sin la app
+
+- **Android (Chrome):** menú ⋮ → **Instalar aplicación**.
+- **iPhone (Safari):** compartir → **Añadir a pantalla de inicio**.

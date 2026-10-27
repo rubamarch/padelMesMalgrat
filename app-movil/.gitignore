@@ -1,0 +1,6 @@
+# Se generan al compilar (no se suben: así no hay imágenes ni código nativo duplicado en el repositorio)
+node_modules/
+www/
+assets/
+android/
+ios/

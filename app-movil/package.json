@@ -1,0 +1,24 @@
+{
+  "name": "padel-mes-malgrat-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "App nativa (Android / iPhone) de Padel Mes Malgrat, hecha con Capacitor a partir de la web",
+  "scripts": {
+    "preparar": "node scripts/preparar.mjs",
+    "android": "node scripts/preparar.mjs && npx cap add android && npx capacitor-assets generate --android && npx cap sync android",
+    "sync": "node scripts/preparar.mjs && npx cap sync"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/share": "8.0.3",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.5.3"
+  }
+}
