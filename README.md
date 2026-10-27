@@ -40,6 +40,7 @@ se pueden **descargar en PDF** para pasarlos por WhatsApp.
 | `index.html` | La web completa |
 | `config.js` | Nombre del club y conexión a Supabase. **Es el único archivo que hay que tocar.** |
 | `supabase/schema.sql` | Tablas, reglas de seguridad y funciones de la base de datos |
+| `app-movil/` | Todo lo de la app para el móvil (manifiesto, iconos e instrucciones para crear la APK) |
 | `.github/workflows/mantener-activo.yml` | Consulta Supabase cada 3 días para que no se pause |
 
 Si `config.js` no tiene los datos de Supabase, la web funciona en **modo ejemplo** (datos inventados,
